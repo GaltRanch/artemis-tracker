@@ -205,6 +205,19 @@ class Trajectory3D {
       const moonJson = await moonResp.json();
       this._moonPositions = this._parseVectors(moonJson.result);
 
+      // Full Moon orbit (~27 days) for orbital path visualization
+      await new Promise(r => setTimeout(r, 800));
+      const moonOrbitParams = new URLSearchParams({
+        format: 'json', COMMAND: "'301'", CENTER: "'399'",
+        EPHEM_TYPE: "'VECTORS'", START_TIME: "'2026-03-20 00:00'",
+        STOP_TIME: "'2026-04-16 08:00'", STEP_SIZE: "'8 h'",
+        VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",
+        REF_PLANE: "'ECLIPTIC'", REF_SYSTEM: "'J2000'", CSV_FORMAT: "'YES'",
+      });
+      const moonOrbitResp = await fetch(`${base}?${moonOrbitParams}`);
+      const moonOrbitJson = await moonOrbitResp.json();
+      this._moonOrbit = this._parseVectors(moonOrbitJson.result);
+
       if (this._realTrajectory?.length > 0) {
         this._loaded = true;
         this._buildTrajectoryMesh();
@@ -340,9 +353,61 @@ class Trajectory3D {
       this.scene.add(this._emLine);
     }
 
-    // ===== Auto-center camera on trajectory + Moon =====
+    // ===== Moon orbit (full ~27-day path) =====
+    if (this._moonOrbit?.length > 1) {
+      const orbitPts = this._moonOrbit.map(p => new THREE.Vector3(p.x, p.z, -p.y));
+      // Close the loop
+      orbitPts.push(orbitPts[0].clone());
+
+      const orbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPts);
+      const orbitMat = new THREE.LineDashedMaterial({
+        color: 0x94a3b8, transparent: true, opacity: 0.15,
+        dashSize: 3, gapSize: 3,
+      });
+      const orbitLine = new THREE.Line(orbitGeo, orbitMat);
+      orbitLine.computeLineDistances(); // needed for dashed material
+      this.scene.add(orbitLine);
+
+      // "ORBITA LUNAR" label at top of orbit
+      let topPt = orbitPts[0];
+      for (const p of orbitPts) { if (p.y > topPt.y) topPt = p; }
+      const orbitLabel = this._createTextSprite('ORBITA LUNAR', 0x64748b);
+      orbitLabel.position.copy(topPt);
+      orbitLabel.position.y += 8;
+      this.scene.add(orbitLabel);
+
+      console.log(`[3D] Moon orbit: ${orbitPts.length} points`);
+    }
+
+    // ===== Flyby marker — Moon position at closest approach =====
+    if (this._moonPositions?.length > 0) {
+      const flybyMs = new Date('2026-04-06T23:06:00Z').getTime();
+      let flybyMoon = this._moonPositions[0];
+      for (const m of this._moonPositions) {
+        if (Math.abs(m.timestamp - flybyMs) < Math.abs(flybyMoon.timestamp - flybyMs)) flybyMoon = m;
+      }
+
+      // Purple marker at flyby location
+      const flybyGeo = new THREE.RingGeometry(3, 4.5, 32);
+      const flybyMat = new THREE.MeshBasicMaterial({ color: 0x8b5cf6, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+      const flybyMarker = new THREE.Mesh(flybyGeo, flybyMat);
+      flybyMarker.position.set(flybyMoon.x, flybyMoon.z, -flybyMoon.y);
+      flybyMarker.lookAt(0, 0, 0); // face Earth
+      this.scene.add(flybyMarker);
+
+      const flybyLabel = this._createTextSprite('FLYBY 6-7 ABR', 0x8b5cf6);
+      flybyLabel.position.set(flybyMoon.x, flybyMoon.z + 8, -flybyMoon.y);
+      this.scene.add(flybyLabel);
+    }
+
+    // ===== Auto-center camera on trajectory + Moon orbit =====
     if (this._moon) {
       plannedPts.push(this._moon.position.clone());
+    }
+    if (this._moonOrbit) {
+      for (const p of this._moonOrbit) {
+        plannedPts.push(new THREE.Vector3(p.x, p.z, -p.y));
+      }
     }
     this._centerCamera(plannedPts);
   }
@@ -409,19 +474,49 @@ class Trajectory3D {
       this._traveledLine.geometry.setDrawRange(0, idx + 1);
     }
 
-    // Update Moon position
-    if (this._moon && this._moonPositions?.length > 0) {
-      let mp = this._moonPositions[0];
-      for (const m of this._moonPositions) {
-        if (m.timestamp <= nowMs) mp = m;
+    // Update Moon position — interpolate between data points for smooth movement
+    if (this._moon && this._moonPositions?.length > 1) {
+      let before = this._moonPositions[0];
+      let after = this._moonPositions[this._moonPositions.length - 1];
+
+      for (let i = 0; i < this._moonPositions.length - 1; i++) {
+        if (this._moonPositions[i].timestamp <= nowMs && this._moonPositions[i + 1].timestamp >= nowMs) {
+          before = this._moonPositions[i];
+          after = this._moonPositions[i + 1];
+          break;
+        }
       }
-      this._moon.position.set(mp.x, mp.z, -mp.y);
+
+      const span = after.timestamp - before.timestamp;
+      const t = span > 0 ? Math.max(0, Math.min(1, (nowMs - before.timestamp) / span)) : 0;
+
+      const mx = before.x + (after.x - before.x) * t;
+      const my = before.y + (after.y - before.y) * t;
+      const mz = before.z + (after.z - before.z) * t;
+
+      this._moon.position.set(mx, mz, -my);
 
       // Update Earth-Moon line
       if (this._emLine) {
         const pts = [new THREE.Vector3(0, 0, 0), this._moon.position.clone()];
         this._emLine.geometry.setFromPoints(pts);
       }
+
+      // Update Moon trail (past positions during mission)
+      if (!this._moonTrail) {
+        const trailMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.25 });
+        const trailGeo = new THREE.BufferGeometry();
+        this._moonTrail = new THREE.Line(trailGeo, trailMat);
+        this.scene.add(this._moonTrail);
+      }
+      const trailPts = [];
+      for (const m of this._moonPositions) {
+        if (m.timestamp <= nowMs) {
+          trailPts.push(new THREE.Vector3(m.x, m.z, -m.y));
+        }
+      }
+      trailPts.push(this._moon.position.clone());
+      this._moonTrail.geometry.setFromPoints(trailPts);
     }
 
     // Rotate Earth slowly
