@@ -2,8 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artemis II - Orion Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#020408">
+  <title>Artemis II — Orion "Integrity" Tracker</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -11,266 +14,346 @@
 <body>
   <div id="stars-bg"></div>
 
+  <!-- ===== Header ===== -->
   <header>
-    <div class="header-content">
-      <div class="logo">
-        <svg class="nasa-icon" viewBox="0 0 40 40" width="40" height="40">
-          <circle cx="20" cy="20" r="18" fill="none" stroke="#FC3D21" stroke-width="2"/>
-          <path d="M10 20 Q15 10 20 20 Q25 30 30 20" fill="none" stroke="#fff" stroke-width="2"/>
-          <circle cx="20" cy="20" r="3" fill="#FC3D21"/>
-        </svg>
-        <div>
-          <h1>ARTEMIS II</h1>
-          <span class="subtitle">Orion Spacecraft Tracker</span>
+    <div class="header-inner">
+      <div class="header-left">
+        <div class="mission-badge">
+          <div class="icon">AII</div>
+          <div>
+            <h1>ARTEMIS II</h1>
+            <span class="callsign">Orion "Integrity"</span>
+          </div>
         </div>
       </div>
-      <div class="mission-clock">
-        <span class="clock-label">TIEMPO DE MISION (MET)</span>
-        <span id="met-clock" class="clock-value">T+ 00:00:00:00</span>
+      <div class="header-center">
+        <div class="live-dot"></div>
+        <span class="phase-label" id="mission-phase">CARGANDO...</span>
       </div>
+      <div class="header-right">
+        <div class="met-label">Mission Elapsed Time</div>
+        <div class="met-value" id="met-clock">T+ --:--:--:--</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span><span class="label">Fecha:</span> <span class="value" id="current-date">--</span></span>
+      <span><span class="label">Constelacion:</span> <span class="value" id="constellation">--</span></span>
+      <span><span class="label">Senal (1-way):</span> <span class="value" id="light-time">--</span></span>
+      <span><span class="label">Dist. al Sol:</span> <span class="value" id="dist-sun">--</span></span>
     </div>
   </header>
 
   <main>
-    <!-- Status Banner -->
-    <section class="status-banner">
-      <div class="status-indicator live"></div>
-      <span id="mission-phase">EN RUTA HACIA LA LUNA</span>
-      <span class="separator">|</span>
-      <span id="current-date-display"></span>
-    </section>
+    <div class="dashboard">
 
-    <!-- Main Grid -->
-    <div class="dashboard-grid">
-
-      <!-- Trajectory Visualization -->
+      <!-- ===== Trajectory 3D ===== -->
       <section class="card trajectory-card">
-        <h2>Trayectoria en Tiempo Real</h2>
-        <canvas id="trajectory-canvas"></canvas>
+        <div class="card-title"><span class="accent"></span>TRAYECTORIA 3D — DATOS NASA/JPL HORIZONS</div>
+        <div id="trajectory-3d"></div>
         <div class="trajectory-legend">
           <span><i class="dot earth"></i> Tierra</span>
           <span><i class="dot moon"></i> Luna</span>
           <span><i class="dot orion"></i> Orion</span>
-          <span><i class="line planned"></i> Trayectoria planificada</span>
+          <span><i class="line planned"></i> Prediccion</span>
           <span><i class="line traveled"></i> Recorrido</span>
+          <span style="color:var(--text-muted); font-size:0.6rem">Click + arrastra para rotar · Scroll para zoom · Click derecho para mover</span>
         </div>
       </section>
 
-      <!-- Telemetry Panel -->
+      <!-- ===== Telemetry ===== -->
       <section class="card telemetry-card">
-        <h2>Telemetria</h2>
-        <div class="telemetry-grid">
-          <div class="telemetry-item">
-            <span class="telem-label">Distancia a Tierra</span>
-            <span id="dist-earth" class="telem-value">--</span>
-            <span class="telem-unit">km</span>
+        <div class="card-title"><span class="accent"></span>TELEMETRIA</div>
+        <div class="data-source" id="data-source">Conectando con NASA/JPL Horizons...</div>
+        <div class="telem-grid">
+          <div class="telem-item primary">
+            <span class="label">Distancia a Tierra</span>
+            <span class="value" id="dist-earth">--</span>
+            <span class="unit">km</span>
           </div>
-          <div class="telemetry-item">
-            <span class="telem-label">Distancia a Luna</span>
-            <span id="dist-moon" class="telem-value">--</span>
-            <span class="telem-unit">km</span>
+          <div class="telem-item primary">
+            <span class="label">Distancia a Luna</span>
+            <span class="value" id="dist-moon">--</span>
+            <span class="unit">km</span>
           </div>
-          <div class="telemetry-item">
-            <span class="telem-label">Velocidad</span>
-            <span id="velocity" class="telem-value">--</span>
-            <span class="telem-unit">km/h</span>
+          <div class="telem-item">
+            <span class="label">Velocidad</span>
+            <span class="value" id="velocity">--</span>
+            <span class="unit">km/h</span>
           </div>
-          <div class="telemetry-item">
-            <span class="telem-label">Altitud</span>
-            <span id="altitude" class="telem-value">--</span>
-            <span class="telem-unit">km</span>
+          <div class="telem-item">
+            <span class="label">Vel. Radial</span>
+            <span class="value" id="range-rate">--</span>
+            <span class="unit">km/s</span>
           </div>
-          <div class="telemetry-item">
-            <span class="telem-label">Aceleracion</span>
-            <span id="acceleration" class="telem-value">--</span>
-            <span class="telem-unit">m/s2</span>
+          <div class="telem-item">
+            <span class="label">RA (Asc. Recta)</span>
+            <span class="value" id="ra">--</span>
+            <span class="unit">hms</span>
           </div>
-          <div class="telemetry-item">
-            <span class="telem-label">Temperatura Ext.</span>
-            <span id="temp-ext" class="telem-value">--</span>
-            <span class="telem-unit">C</span>
+          <div class="telem-item">
+            <span class="label">DEC (Declinacion)</span>
+            <span class="value" id="dec">--</span>
+            <span class="unit">dms</span>
           </div>
         </div>
 
-        <h3 class="subsection-title">Sistemas</h3>
+        <div class="systems-title">SISTEMAS DE ORION</div>
         <div class="systems-grid">
-          <div class="system-item ok">
-            <span class="sys-status"></span>
-            <span>Soporte Vital (ECLSS)</span>
-          </div>
-          <div class="system-item ok">
-            <span class="sys-status"></span>
-            <span>Energia / Paneles Solares</span>
-          </div>
-          <div class="system-item ok">
-            <span class="sys-status"></span>
-            <span>Comunicaciones</span>
-          </div>
-          <div class="system-item ok">
-            <span class="sys-status"></span>
-            <span>Propulsion (OMS)</span>
-          </div>
-          <div class="system-item ok">
-            <span class="sys-status"></span>
-            <span>Navegacion</span>
-          </div>
-          <div class="system-item ok">
-            <span class="sys-status"></span>
-            <span>Escudo Termico</span>
-          </div>
+          <div class="sys-item ok"><span class="sys-dot"></span>Soporte Vital (ECLSS)</div>
+          <div class="sys-item ok"><span class="sys-dot"></span>Energia / Paneles Solares</div>
+          <div class="sys-item ok"><span class="sys-dot"></span>Comunicaciones (DSN)</div>
+          <div class="sys-item ok"><span class="sys-dot"></span>Propulsion (OMS-E)</div>
+          <div class="sys-item ok"><span class="sys-dot"></span>Navegacion / Star Tracker</div>
+          <div class="sys-item ok"><span class="sys-dot"></span>Escudo Termico</div>
         </div>
       </section>
 
-      <!-- Crew Card -->
+      <!-- ===== Crew ===== -->
       <section class="card crew-card">
-        <h2>Tripulacion</h2>
+        <div class="card-title"><span class="accent"></span>TRIPULACION</div>
         <div class="crew-grid">
           <div class="crew-member">
-            <div class="crew-avatar">RW</div>
+            <div class="crew-avatar commander">RW</div>
             <div class="crew-info">
               <strong>Reid Wiseman</strong>
-              <span>Comandante</span>
-              <span class="crew-agency">NASA</span>
+              <span class="role">Comandante</span>
+              <span class="agency">NASA</span>
             </div>
           </div>
           <div class="crew-member">
-            <div class="crew-avatar">VG</div>
+            <div class="crew-avatar pilot">VG</div>
             <div class="crew-info">
               <strong>Victor Glover</strong>
-              <span>Piloto</span>
-              <span class="crew-agency">NASA</span>
+              <span class="role">Piloto</span>
+              <span class="agency">NASA</span>
             </div>
           </div>
           <div class="crew-member">
-            <div class="crew-avatar">CH</div>
+            <div class="crew-avatar ms1">CK</div>
             <div class="crew-info">
               <strong>Christina Koch</strong>
-              <span>Especialista de Mision</span>
-              <span class="crew-agency">NASA</span>
+              <span class="role">Especialista de Mision</span>
+              <span class="agency">NASA</span>
             </div>
           </div>
           <div class="crew-member">
-            <div class="crew-avatar">JH</div>
+            <div class="crew-avatar ms2">JH</div>
             <div class="crew-info">
               <strong>Jeremy Hansen</strong>
-              <span>Especialista de Mision</span>
-              <span class="crew-agency">CSA</span>
+              <span class="role">Especialista de Mision</span>
+              <span class="agency">CSA</span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Mission Timeline -->
+      <!-- ===== Timeline ===== -->
       <section class="card timeline-card">
-        <h2>Cronograma de Mision</h2>
+        <div class="card-title"><span class="accent"></span>CRONOGRAMA DE MISION (DATOS NASA/JPL)</div>
         <div class="timeline" id="timeline">
-          <div class="timeline-event completed">
-            <div class="tl-marker"></div>
-            <div class="tl-content">
-              <span class="tl-time">T+00:00:00</span>
-              <strong>Lanzamiento SLS</strong>
-              <p>Despegue desde LC-39B, Kennedy Space Center</p>
-            </div>
+          <div class="tl-event" data-met="0">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 1 · 1 ABR 22:35 UTC</span>
+            <span class="tl-name">Lanzamiento</span>
+            <span class="tl-desc">Despegue SLS desde LC-39B, KSC</span>
           </div>
-          <div class="timeline-event completed">
-            <div class="tl-marker"></div>
-            <div class="tl-content">
-              <span class="tl-time">T+00:08:30</span>
-              <strong>Separacion ICPS</strong>
-              <p>Insercion en orbita terrestre provisional</p>
-            </div>
+          <div class="tl-event" data-met="1200">
+            <span class="tl-dot"></span>
+            <span class="tl-time">MET 0/00:20</span>
+            <span class="tl-name">Despliegue Solar</span>
+            <span class="tl-desc">Orion despliega paneles solares en orbita</span>
           </div>
-          <div class="timeline-event completed">
-            <div class="tl-marker"></div>
-            <div class="tl-content">
-              <span class="tl-time">T+01:30:00</span>
-              <strong>Inyeccion Translunar (TLI)</strong>
-              <p>Encendido del motor ICPS rumbo a la Luna</p>
-            </div>
+          <div class="tl-event" data-met="12258">
+            <span class="tl-dot"></span>
+            <span class="tl-time">MET 0/03:24</span>
+            <span class="tl-name">Separacion ICPS</span>
+            <span class="tl-desc">Separacion de la etapa superior</span>
           </div>
-          <div class="timeline-event active">
-            <div class="tl-marker"></div>
-            <div class="tl-content">
-              <span class="tl-time">T+02:00:00 - T+04:00:00</span>
-              <strong>Crucero Translunar</strong>
-              <p>Viaje hacia la Luna, pruebas de sistemas</p>
-            </div>
+          <div class="tl-event" data-met="46500">
+            <span class="tl-dot"></span>
+            <span class="tl-time">MET 0/12:55</span>
+            <span class="tl-name">Elevacion Perigeo</span>
+            <span class="tl-desc">Quemado para elevar perigeo orbital</span>
           </div>
-          <div class="timeline-event upcoming">
-            <div class="tl-marker"></div>
-            <div class="tl-content">
-              <span class="tl-time">~T+04:06:00</span>
-              <strong>Sobrevuelo Lunar</strong>
-              <p>Paso a ~8,900 km de la superficie lunar</p>
-            </div>
+          <div class="tl-event" data-met="90840">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 2 · MET 1/01:14</span>
+            <span class="tl-name">Inyeccion Translunar</span>
+            <span class="tl-desc">TLI burn 5m 55s, delta-v 388 m/s</span>
           </div>
-          <div class="timeline-event upcoming">
-            <div class="tl-marker"></div>
-            <div class="tl-content">
-              <span class="tl-time">~T+05:00:00</span>
-              <strong>Crucero de Retorno</strong>
-              <p>Trayectoria de retorno libre hacia la Tierra</p>
-            </div>
+          <div class="tl-event" data-met="176880">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 3 · MET 2/00:08</span>
+            <span class="tl-name">Correc. Trayectoria #1</span>
+            <span class="tl-desc">Cancelado — trayectoria nominal</span>
           </div>
-          <div class="timeline-event upcoming">
-            <div class="tl-marker"></div>
-            <div class="tl-content">
-              <span class="tl-time">~T+10:00:00</span>
-              <strong>Reentrada y Amerizaje</strong>
-              <p>Reentrada atmosferica y amerizaje en el Pacifico</p>
-            </div>
+          <div class="tl-event" data-met="263280">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 4 · MET 3/01:08</span>
+            <span class="tl-name">Correc. Trayectoria #2</span>
+            <span class="tl-desc">Ajuste fino rumbo a la Luna</span>
+          </div>
+          <div class="tl-event" data-met="361740">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 5 · MET 4/04:29</span>
+            <span class="tl-name">Correc. #3 + Esfera Lunar</span>
+            <span class="tl-desc">Orion entra en esfera gravitacional lunar</span>
+          </div>
+          <div class="tl-event" data-met="434460">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 6 · MET 5/00:31</span>
+            <span class="tl-name">Sobrevuelo Lunar</span>
+            <span class="tl-desc">Aprox. minima ~6,500 km, lado oculto</span>
+          </div>
+          <div class="tl-event" data-met="500520">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 7 · MET 5/18:52</span>
+            <span class="tl-name">Salida Esfera Lunar</span>
+            <span class="tl-desc">Correc. retorno #1 programada</span>
+          </div>
+          <div class="tl-event" data-met="609600">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 8 · MET 7/04:20</span>
+            <span class="tl-name">Pilotaje Manual</span>
+            <span class="tl-desc">Demostracion de pilotaje manual de Orion</span>
+          </div>
+          <div class="tl-event" data-met="770940">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 10 · MET 9/01:09</span>
+            <span class="tl-name">Separacion + Reentrada</span>
+            <span class="tl-desc">Modulo de servicio sep., interfaz 122 km</span>
+          </div>
+          <div class="tl-event" data-met="772920">
+            <span class="tl-dot"></span>
+            <span class="tl-time">DIA 10 · 11 ABR 00:17 UTC</span>
+            <span class="tl-name">Amerizaje</span>
+            <span class="tl-desc">Pacifico, frente a Baja California</span>
           </div>
         </div>
       </section>
 
-      <!-- Mission Stats -->
-      <section class="card stats-card">
-        <h2>Datos de Mision</h2>
+      <!-- ===== Live Feeds ===== -->
+      <section class="card" style="grid-column: 1 / -1;">
+        <div class="card-title"><span class="accent"></span>COMUNICACIONES EN VIVO — NASA TV / CAPCOM</div>
+        <div class="live-feeds">
+          <div class="live-feed">
+            <div class="feed-label">MISION EN VIVO (Audio CAPCOM + Mission Control)</div>
+            <iframe src="https://www.youtube.com/embed/m3kR2KK8TEs?autoplay=0&mute=1"
+              title="Artemis II Live Coverage" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen loading="lazy"></iframe>
+          </div>
+          <div class="live-feed">
+            <div class="feed-label">VISTAS EN VIVO DESDE ORION</div>
+            <iframe src="https://www.youtube.com/embed/6RwfNBtepa4?autoplay=0&mute=1"
+              title="Live Views From Orion" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen loading="lazy"></iframe>
+          </div>
+        </div>
+        <div class="feed-hls">
+          <span class="feed-hls-label">Stream directo NASA TV (HLS):</span>
+          <a href="https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8" target="_blank" rel="noopener">
+            NASA Public
+          </a>
+          <a href="https://nasa-i.akamaihd.net/hls/live/253566/NASA-NTV2-Media/master.m3u8" target="_blank" rel="noopener">
+            NASA Media
+          </a>
+          <span class="feed-note">Radio VHF 146.940 MHz / UHF 444.925 MHz (Space Coast)</span>
+        </div>
+      </section>
+
+      <!-- ===== Deep Space Network ===== -->
+      <section class="card" style="grid-column: span 2;">
+        <div class="card-title"><span class="accent"></span>DEEP SPACE NETWORK — EN VIVO</div>
+        <div class="dsn-status" id="dsn-status">Conectando con DSN...</div>
+        <div class="dsn-grid" id="dsn-grid"></div>
+      </section>
+
+      <!-- ===== Space Weather ===== -->
+      <section class="card">
+        <div class="card-title"><span class="accent"></span>CLIMA ESPACIAL (DONKI)</div>
+        <div class="sw-risk" id="sw-risk">Cargando...</div>
+        <div class="sw-details" id="sw-details"></div>
+      </section>
+
+      <!-- ===== NASA Photos ===== -->
+      <section class="card" style="grid-column: 1 / -1;">
+        <div class="card-title"><span class="accent"></span>GALERIA NASA — ARTEMIS II</div>
+        <div class="gallery" id="gallery">Cargando fotos...</div>
+      </section>
+
+      <!-- ===== Mission Data ===== -->
+      <section class="card">
+        <div class="card-title"><span class="accent"></span>DATOS DE MISION</div>
         <div class="stats-list">
-          <div class="stat-row">
-            <span>Vehiculo de lanzamiento</span>
-            <strong>SLS Block 1</strong>
+          <div class="stat-row"><span class="stat-label">Vehiculo</span><span class="stat-value">SLS Block 1</span></div>
+          <div class="stat-row"><span class="stat-label">Nave</span><span class="stat-value">Orion MPCV "Integrity"</span></div>
+          <div class="stat-row"><span class="stat-label">Mod. Servicio</span><span class="stat-value">ESM (ESA/Airbus)</span></div>
+          <div class="stat-row"><span class="stat-label">Tipo</span><span class="stat-value">Sobrevuelo lunar tripulado</span></div>
+          <div class="stat-row"><span class="stat-label">Duracion</span><span class="stat-value">~10 dias</span></div>
+          <div class="stat-row"><span class="stat-label">Lanzamiento</span><span class="stat-value">1 Abr 2026, 22:35 UTC</span></div>
+          <div class="stat-row"><span class="stat-label">Amerizaje</span><span class="stat-value">~11 Abr 2026, 00:17 UTC</span></div>
+          <div class="stat-row"><span class="stat-label">Masa a Luna</span><span class="stat-value">~27,000 kg</span></div>
+          <div class="stat-row"><span class="stat-label">Vol. presurizado</span><span class="stat-value">19.6 m3</span></div>
+          <div class="stat-row"><span class="stat-label">Empuje SLS</span><span class="stat-value">39.1 MN</span></div>
+        </div>
+      </section>
+
+      <!-- ===== CubeSats ===== -->
+      <section class="card" style="grid-column: span 2;">
+        <div class="card-title"><span class="accent"></span>CUBESATS DESPLEGADOS (12U · Dia 1 post-separacion ICPS)</div>
+        <div class="cubesat-grid">
+          <div class="cubesat">
+            <div class="cs-status ok">OPERATIVO</div>
+            <div class="cs-name">ATENEA</div>
+            <div class="cs-country">CONAE — Argentina</div>
+            <div class="cs-desc">Mide radiacion desde orbita baja hasta espacio profundo. Evalua componentes electronicos en entorno solar de alta energia. Analiza senales GPS/GLONASS/Galileo en regiones sin cobertura. Orbita a ~72.000 km de altitud.</div>
+            <div class="cs-detail">Desarrollado por CONAE con UNLP, UNSAM, FIUBA, IAR, CNEA y VENG. Construido en el Centro Espacial Teofilo Tabanera, Cordoba. Conexion exitosa confirmada a 4 horas del lanzamiento via estaciones en Cordoba y Tierra del Fuego.</div>
           </div>
-          <div class="stat-row">
-            <span>Nave</span>
-            <strong>Orion MPCV</strong>
+          <div class="cubesat">
+            <div class="cs-status ok">OPERATIVO</div>
+            <div class="cs-name">TACHELES</div>
+            <div class="cs-country">Neurospace / DLR — Alemania</div>
+            <div class="cs-desc">Prueba electronica de rovers lunares en espacio profundo, incluyendo exposicion a radiacion en los cinturones de Van Allen. Orbita eliptica alta con apogeo ~77.700 km. Mision estimada: 2 anos.</div>
+            <div class="cs-detail">Desarrollado por Neurospace (Berlin), entregado a NASA el 16 Sep 2025. Integrado en el Orion Stage Adapter. Desplegado tras separacion ICPS.</div>
           </div>
-          <div class="stat-row">
-            <span>Modulo de servicio</span>
-            <strong>ESM (ESA)</strong>
+          <div class="cubesat">
+            <div class="cs-status warn">SIN COMUNICACION</div>
+            <div class="cs-name">K-RadCube</div>
+            <div class="cs-country">KASA — Corea del Sur</div>
+            <div class="cs-desc">Mide radiacion espacial y efectos biologicos a traves de los cinturones de Van Allen usando materiales que simulan tejido humano. Desplegado a ~40.000 km de altitud.</div>
+            <div class="cs-detail">No se ha podido establecer comunicacion normal con estaciones terrestres. KASA investiga el problema. Fase de estabilizacion inicial en curso.</div>
           </div>
-          <div class="stat-row">
-            <span>Tipo de mision</span>
-            <strong>Sobrevuelo lunar tripulado</strong>
-          </div>
-          <div class="stat-row">
-            <span>Duracion estimada</span>
-            <strong>~10 dias</strong>
-          </div>
-          <div class="stat-row">
-            <span>Fecha de lanzamiento</span>
-            <strong>2 Abril 2026</strong>
-          </div>
-          <div class="stat-row">
-            <span>Sitio de lanzamiento</span>
-            <strong>LC-39B, KSC, Florida</strong>
-          </div>
-          <div class="stat-row">
-            <span>Amerizaje estimado</span>
-            <strong>~12 Abril 2026</strong>
+          <div class="cubesat">
+            <div class="cs-status ok">OPERATIVO</div>
+            <div class="cs-name">Space Weather CubeSat-1</div>
+            <div class="cs-country">SSA — Arabia Saudi</div>
+            <div class="cs-desc">Monitorea clima espacial: radiacion, rayos X solares, particulas energeticas solares y campos magneticos en orbita terrestre alta.</div>
+            <div class="cs-detail">Primera mision de espacio profundo de la Agencia Espacial Saudi (SSA). Vinculada a los Acuerdos Artemis.</div>
           </div>
         </div>
       </section>
+
     </div>
   </main>
 
   <footer>
-    <p>Artemis II Tracker &mdash; Datos simulados basados en el perfil de mision NASA Artemis II</p>
-    <p>No es una fuente oficial de NASA. Proyecto educativo.</p>
+    <p>Artemis Tracker &mdash; Telemetria en tiempo real via NASA/JPL Horizons API (ssd.jpl.nasa.gov)</p>
+    <p>No es una fuente oficial de NASA. Proyecto educativo. ID Horizons: -1024</p>
   </footer>
 
-  <script src="js/trajectory.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
   <script src="js/telemetry.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/datasources.js"></script>
+  <script type="module" src="js/trajectory3d.js"></script>
+  <script src="js/app.js" defer></script>
 </body>
 </html>
