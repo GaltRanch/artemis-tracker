@@ -148,4 +148,6 @@ JPL Horizons assigns unique IDs to each spacecraft. The trajectory, telemetry, a
 
 ## License
 
-Educational project. NASA data and images are public domain. Not an official NASA product.
+MIT License. See [LICENSE](LICENSE).
+
+NASA data and images are public domain. Not an official NASA product.
