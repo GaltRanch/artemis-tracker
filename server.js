@@ -14,7 +14,7 @@ try {
 
 const PORT = 20000;
 const STATIC_DIR = __dirname;
-const NASA_API_KEY = process.env.NASA_API_KEY || 'DEMO_KEY';
+let NASA_API_KEY = process.env.NASA_API_KEY || 'DEMO_KEY';
 
 const MIME = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
@@ -67,6 +67,44 @@ function proxyResponse(res, result, cacheKey, ttl) {
 
 const server = http.createServer(async (req, res) => {
   const url = req.url;
+
+  // ===== API Key configuration endpoint =====
+  if (url === '/api/config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { apiKey } = JSON.parse(body);
+        if (apiKey && apiKey.length > 10) {
+          NASA_API_KEY = apiKey;
+          // Persist to .env
+          try {
+            fs.writeFileSync(path.join(__dirname, '.env'), `NASA_API_KEY=${apiKey}\n`);
+          } catch (e) { /* ok if can't write */ }
+          // Clear cache so new key is used
+          cache.clear();
+          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({ ok: true, message: 'API key configured' }));
+        } else {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, message: 'Invalid key' }));
+        }
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, message: 'Bad request' }));
+      }
+    });
+    return;
+  }
+
+  if (url === '/api/config' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({
+      configured: NASA_API_KEY !== 'DEMO_KEY',
+      keyPreview: NASA_API_KEY === 'DEMO_KEY' ? 'DEMO_KEY' : NASA_API_KEY.slice(0, 6) + '...',
+    }));
+    return;
+  }
 
   // ===== 1. JPL Horizons Proxy =====
   if (url.startsWith('/api/horizons?')) {

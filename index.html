@@ -14,6 +14,49 @@
 <body>
   <div id="stars-bg"></div>
 
+  <!-- ===== API Key Setup Modal ===== -->
+  <div id="api-setup" class="api-setup-overlay" style="display:none">
+    <div class="api-setup-modal">
+      <div class="api-setup-icon">🔑</div>
+      <h2>Configurar NASA API Key</h2>
+      <p>Este tracker usa datos en tiempo real de NASA. Para acceder a todas las fuentes necesitas una API key gratuita.</p>
+
+      <div class="api-setup-steps">
+        <div class="api-step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Registrate en NASA (30 segundos, gratis)</strong>
+            <p>Abrí <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>, completá nombre, email y click en "Signup"</p>
+          </div>
+        </div>
+        <div class="api-step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Revisá tu email</strong>
+            <p>NASA te envia la API key al instante</p>
+          </div>
+        </div>
+        <div class="api-step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Pegala aca</strong>
+            <input type="text" id="api-key-input" placeholder="Tu NASA API key..." spellcheck="false" autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <div class="api-setup-actions">
+        <button id="api-key-save" class="btn-primary" disabled>Guardar y conectar</button>
+        <button id="api-key-skip" class="btn-secondary">Usar sin key (limitado)</button>
+      </div>
+
+      <p class="api-setup-note">Sin API key funciona con DEMO_KEY (30 requests/hora). Con tu key: 1,000 requests/hora. La key se guarda en tu navegador y en el servidor local.</p>
+    </div>
+  </div>
+
+  <!-- ===== API Key Settings Button ===== -->
+  <button id="api-settings-btn" class="api-settings-btn" title="Configurar NASA API Key">⚙</button>
+
   <!-- ===== Header ===== -->
   <header>
     <div class="header-inner">

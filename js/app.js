@@ -354,4 +354,82 @@ setInterval(update, 1000);
 setTimeout(updateExtras, 3000); // initial delay for data to load
 setInterval(updateExtras, 15000); // refresh rendering every 15s
 
-// No resize needed for 3D — Three.js handles it internally
+// ===== API Key Setup UI =====
+
+const apiSetup = $('api-setup');
+const apiInput = $('api-key-input');
+const apiSaveBtn = $('api-key-save');
+const apiSkipBtn = $('api-key-skip');
+const apiSettingsBtn = $('api-settings-btn');
+
+// Check if API key is configured on server
+async function checkApiConfig() {
+  try {
+    const resp = await fetch('/api/config');
+    const data = await resp.json();
+    if (data.configured) {
+      apiSettingsBtn.classList.add('configured');
+      apiSettingsBtn.title = `NASA API Key: ${data.keyPreview}`;
+    } else {
+      // Show setup modal on first visit if no key and not dismissed
+      if (!localStorage.getItem('artemis-api-dismissed')) {
+        apiSetup.style.display = 'flex';
+      }
+    }
+  } catch (e) { /* server not reachable */ }
+}
+
+// Enable save button when input has content
+apiInput?.addEventListener('input', () => {
+  apiSaveBtn.disabled = apiInput.value.trim().length < 10;
+});
+
+// Save API key
+apiSaveBtn?.addEventListener('click', async () => {
+  const key = apiInput.value.trim();
+  if (key.length < 10) return;
+
+  apiSaveBtn.textContent = 'Conectando...';
+  apiSaveBtn.disabled = true;
+
+  try {
+    const resp = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: key }),
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      apiSetup.style.display = 'none';
+      apiSettingsBtn.classList.add('configured');
+      apiSettingsBtn.title = `NASA API Key: ${key.slice(0, 6)}...`;
+      localStorage.setItem('artemis-api-key', key);
+      // Refresh data sources with new key
+      dataSources.fetchAll();
+    } else {
+      apiSaveBtn.textContent = 'Error — intentar de nuevo';
+      apiSaveBtn.disabled = false;
+    }
+  } catch (e) {
+    apiSaveBtn.textContent = 'Error de conexion';
+    apiSaveBtn.disabled = false;
+  }
+});
+
+// Skip — use DEMO_KEY
+apiSkipBtn?.addEventListener('click', () => {
+  apiSetup.style.display = 'none';
+  localStorage.setItem('artemis-api-dismissed', '1');
+});
+
+// Settings button — reopen modal
+apiSettingsBtn?.addEventListener('click', () => {
+  apiSetup.style.display = 'flex';
+  // Pre-fill if we have a stored key
+  const stored = localStorage.getItem('artemis-api-key');
+  if (stored && apiInput) apiInput.value = stored;
+});
+
+// Check on load
+checkApiConfig();
