@@ -3,9 +3,18 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
+// Load .env file if present
+try {
+  const envFile = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
+  envFile.split('\n').forEach(line => {
+    const [key, ...val] = line.split('=');
+    if (key && val.length) process.env[key.trim()] = val.join('=').trim();
+  });
+} catch (e) { /* no .env file */ }
+
 const PORT = 20000;
 const STATIC_DIR = __dirname;
-const NASA_API_KEY = 'H8fkZpGr4Vnyn0kCzLPdWmYbVp47gPaD3bB6cOch';
+const NASA_API_KEY = process.env.NASA_API_KEY || 'DEMO_KEY';
 
 const MIME = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',

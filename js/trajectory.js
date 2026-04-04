@@ -71,7 +71,7 @@ class TrajectoryRenderer {
     // Wheel zoom
     this.canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const delta = e.deltaY > 0 ? 0.75 : 1.33;
       this._zoom = Math.max(0.5, Math.min(15, this._zoom * delta));
     }, { passive: false });
 
@@ -163,32 +163,42 @@ class TrajectoryRenderer {
       const json = await resp.json();
       this._realTrajectory = this._parseVectors(json.result);
 
-      // Also fetch Moon position relative to Earth for the same period
+      // Fetch Moon positions during mission (for current position)
       await new Promise(r => setTimeout(r, 800));
       const moonParams = new URLSearchParams({
         format: 'json',
-        COMMAND: "'301'",
-        CENTER: "'399'",
+        COMMAND: "'301'", CENTER: "'399'",
         EPHEM_TYPE: "'VECTORS'",
-        START_TIME: "'2026-04-02 02:00'",
-        STOP_TIME: "'2026-04-10 23:50'",
-        STEP_SIZE: "'6 h'",
-        VEC_TABLE: "'2'",
-        OUT_UNITS: "'KM-S'",
-        REF_PLANE: "'ECLIPTIC'",
-        REF_SYSTEM: "'J2000'",
-        CSV_FORMAT: "'YES'",
+        START_TIME: "'2026-04-02 02:00'", STOP_TIME: "'2026-04-10 23:50'",
+        STEP_SIZE: "'6 h'", VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",
+        REF_PLANE: "'ECLIPTIC'", REF_SYSTEM: "'J2000'", CSV_FORMAT: "'YES'",
       });
-
       const moonResp = await fetch(`${base}?${moonParams}`);
       const moonJson = await moonResp.json();
       this._moonPositions = this._parseMoonVectors(moonJson.result);
+
+      // Fetch full Moon orbit (~27 days) for orbital path visualization
+      await new Promise(r => setTimeout(r, 800));
+      const moonOrbitParams = new URLSearchParams({
+        format: 'json',
+        COMMAND: "'301'", CENTER: "'399'",
+        EPHEM_TYPE: "'VECTORS'",
+        START_TIME: "'2026-03-20 00:00'", STOP_TIME: "'2026-04-16 08:00'",
+        STEP_SIZE: "'8 h'", VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",
+        REF_PLANE: "'ECLIPTIC'", REF_SYSTEM: "'J2000'", CSV_FORMAT: "'YES'",
+      });
+      const moonOrbitResp = await fetch(`${base}?${moonOrbitParams}`);
+      const moonOrbitJson = await moonOrbitResp.json();
+      this._moonOrbit = this._parseMoonVectors(moonOrbitJson.result);
 
       if (this._realTrajectory && this._realTrajectory.length > 0) {
         this._trajectoryLoaded = true;
         console.log(`[Trajectory] Loaded ${this._realTrajectory.length} real JPL points`);
         if (this._moonPositions) {
-          console.log(`[Trajectory] Loaded ${this._moonPositions.length} Moon position points`);
+          console.log(`[Trajectory] Loaded ${this._moonPositions.length} Moon mission points`);
+        }
+        if (this._moonOrbit) {
+          console.log(`[Trajectory] Loaded ${this._moonOrbit.length} Moon orbit points`);
         }
       }
     } catch (err) {
@@ -276,6 +286,11 @@ class TrajectoryRenderer {
 
     // Draw grid
     this._drawGrid(ctx, w, h, scene);
+
+    // Moon orbit (full ~27-day path)
+    if (scene.moonOrbitPts?.length > 1) {
+      this._drawMoonOrbit(ctx, scene);
+    }
 
     // Split trajectory: past (tracked) vs future (NoBurn prediction)
     const nowMs = Date.now();
@@ -401,8 +416,22 @@ class TrajectoryRenderer {
       }
     }
 
+    // Rotate full Moon orbit for visualization
+    const moonOrbitRotated = [];
+    if (this._moonOrbit) {
+      for (const m of this._moonOrbit) {
+        const r = rotate(m.x, m.y);
+        moonOrbitRotated.push({ ...r, timestamp: m.timestamp });
+        // Include orbit in bounds
+        if (r.rx < minX) minX = r.rx;
+        if (r.rx > maxX) maxX = r.rx;
+        if (r.ry < minY) minY = r.ry;
+        if (r.ry > maxY) maxY = r.ry;
+      }
+    }
+
     // Earth at rotated origin
-    const earthRot = rotate(0, 0); // (0,0)
+    const earthRot = rotate(0, 0);
     if (earthRot.rx < minX) minX = earthRot.rx;
     if (earthRot.rx > maxX) maxX = earthRot.rx;
 
@@ -453,15 +482,89 @@ class TrajectoryRenderer {
     const earthRfinal = Math.max(earthR, 12);
     const moonRfinal = Math.max(moonR, earthRfinal / 3.67);
 
+    // Project Moon orbit points
+    const moonOrbitPts = moonOrbitRotated.map(m => toScreen(m.rx, m.ry));
+
+    // Find Moon position at flyby time (closest approach ~Apr 7 00:31 UTC)
+    const flybyMs = new Date('2026-04-06T23:06:00Z').getTime();
+    let flybyMoonPos = null;
+    if (moonRotated.length > 0) {
+      let best = moonRotated[0];
+      for (const m of moonRotated) {
+        if (Math.abs(m.timestamp - flybyMs) < Math.abs(best.timestamp - flybyMs)) best = m;
+      }
+      flybyMoonPos = toScreen(best.rx, best.ry);
+    }
+
     return {
       pts,
       earthX: earth.x, earthY: earth.y, earthR: earthRfinal,
       moonX: moonProj.x, moonY: moonProj.y, moonR: moonRfinal,
+      moonOrbitPts,
+      flybyMoonPos,
       scale,
     };
   }
 
   // ===== Drawing methods =====
+
+  _drawMoonOrbit(ctx, scene) {
+    const pts = scene.moonOrbitPts;
+    if (!pts || pts.length < 2) return;
+
+    ctx.save();
+
+    // Full orbit path — thin dashed blue-gray
+    ctx.setLineDash([4, 6]);
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.closePath();
+    ctx.stroke();
+
+    // "ORBITA LUNAR" label at the top of the orbit
+    let topPt = pts[0];
+    for (const p of pts) { if (p.y < topPt.y) topPt = p; }
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.2)';
+    ctx.font = '600 7px "Orbitron", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('ORBITA LUNAR', topPt.x, topPt.y - 8);
+
+    // Flyby point marker — where the Moon will be during closest approach
+    if (scene.flybyMoonPos) {
+      const fp = scene.flybyMoonPos;
+
+      // Pulsing circle at flyby location
+      ctx.beginPath();
+      ctx.arc(fp.x, fp.y, 8, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([2, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Cross marker
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(fp.x - 5, fp.y); ctx.lineTo(fp.x + 5, fp.y);
+      ctx.moveTo(fp.x, fp.y - 5); ctx.lineTo(fp.x, fp.y + 5);
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.6)';
+      ctx.font = '700 7px "Orbitron", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('FLYBY', fp.x, fp.y - 12);
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.35)';
+      ctx.font = '500 6px "Inter", sans-serif';
+      ctx.fillText('6-7 Abr ~23:06 UTC', fp.x, fp.y + 16);
+    }
+
+    ctx.restore();
+  }
 
   _drawStarfield(ctx, w, h) {
     if (!this._stars) {

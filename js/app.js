@@ -101,7 +101,7 @@ function fmt(n) { return n.toLocaleString('es-ES'); }
 // ===== Widgets =====
 const dsnMap = new DSNMap('dsn-map-canvas');
 const radGauge = new RadiationGauge('radiation-gauge');
-const earthView = new EarthViewSim('earth-view-canvas');
+// earthView removed — not real data
 const neoRadar = new NEORadar('neo-radar-canvas');
 const swTimeline = new SpaceWeatherTimeline('sw-timeline');
 renderCrewFirsts('crew-firsts');
@@ -347,11 +347,6 @@ function updateExtras() {
   swTimeline.draw(dataSources.spaceWeather, MISSION.launchDate);
   neoRadar.draw(dataSources.neo);
 
-  // Earth view — use EPIC image if available
-  if (dataSources.epic?.length > 0) {
-    earthView.setEpicImage(dataSources.epic[0].url);
-  }
-  earthView.draw(t.distEarth);
 }
 
 update();
