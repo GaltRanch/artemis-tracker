@@ -66,14 +66,14 @@
         <div class="data-source" id="data-source">Conectando con NASA/JPL Horizons...</div>
         <div class="telem-grid">
           <div class="telem-item primary">
-            <span class="label">Distancia a Tierra</span>
+            <span class="label">Distancia a Tierra (3D)</span>
             <span class="value" id="dist-earth">--</span>
-            <span class="unit">km</span>
+            <span class="unit">km — desde centro de la Tierra</span>
           </div>
           <div class="telem-item primary">
-            <span class="label">Distancia a Luna</span>
+            <span class="label">Distancia a Luna (3D)</span>
             <span class="value" id="dist-moon">--</span>
-            <span class="unit">km</span>
+            <span class="unit">km — desde centro de la Luna</span>
           </div>
           <div class="telem-item">
             <span class="label">Velocidad</span>
@@ -263,24 +263,72 @@
         </div>
       </section>
 
-      <!-- ===== Deep Space Network ===== -->
+      <!-- ===== DSN World Map ===== -->
       <section class="card" style="grid-column: span 2;">
-        <div class="card-title"><span class="accent"></span>DEEP SPACE NETWORK — EN VIVO</div>
-        <div class="dsn-status" id="dsn-status">Conectando con DSN...</div>
+        <div class="card-title"><span class="accent"></span>DEEP SPACE NETWORK — MAPA EN VIVO</div>
+        <canvas id="dsn-map-canvas" style="width:100%;height:200px;border-radius:6px"></canvas>
+        <div class="dsn-status" id="dsn-status" style="margin-top:0.4rem">Conectando con DSN...</div>
         <div class="dsn-grid" id="dsn-grid"></div>
       </section>
 
-      <!-- ===== Space Weather ===== -->
+      <!-- ===== Radiation Gauge + Space Weather ===== -->
       <section class="card">
-        <div class="card-title"><span class="accent"></span>CLIMA ESPACIAL (DONKI)</div>
-        <div class="sw-risk" id="sw-risk">Cargando...</div>
+        <div class="card-title"><span class="accent"></span>RADIACION — RIESGO TRIPULACION</div>
+        <canvas id="radiation-gauge" style="width:100%;height:180px"></canvas>
+      </section>
+
+      <!-- ===== Space Weather Timeline ===== -->
+      <section class="card" style="grid-column: span 2;">
+        <div class="card-title"><span class="accent"></span>CLIMA ESPACIAL vs MISION (7 DIAS)</div>
+        <canvas id="sw-timeline" style="width:100%;height:180px;border-radius:6px"></canvas>
+        <div class="sw-risk" id="sw-risk" style="margin-top:0.4rem">Cargando...</div>
         <div class="sw-details" id="sw-details"></div>
+      </section>
+
+      <!-- ===== Earth View Simulator ===== -->
+      <section class="card">
+        <div class="card-title"><span class="accent"></span>VISTA DE LA TIERRA DESDE ORION</div>
+        <canvas id="earth-view-canvas" style="width:100%;height:200px;border-radius:6px"></canvas>
+      </section>
+
+      <!-- ===== Crew Firsts ===== -->
+      <section class="card">
+        <div class="card-title"><span class="accent"></span>HITOS HISTORICOS</div>
+        <div class="firsts-grid" id="crew-firsts"></div>
+      </section>
+
+      <!-- ===== NEO Radar ===== -->
+      <section class="card">
+        <div class="card-title"><span class="accent"></span>RADAR NEO — OBJETOS CERCANOS</div>
+        <canvas id="neo-radar-canvas" style="width:100%;height:220px;border-radius:6px"></canvas>
       </section>
 
       <!-- ===== NASA Photos ===== -->
       <section class="card" style="grid-column: 1 / -1;">
         <div class="card-title"><span class="accent"></span>GALERIA NASA — ARTEMIS II</div>
         <div class="gallery" id="gallery">Cargando fotos...</div>
+      </section>
+
+      <!-- ===== EPIC — Earth from deep space ===== -->
+      <section class="card" style="grid-column: span 2;">
+        <div class="card-title"><span class="accent"></span>TIERRA DESDE EL ESPACIO PROFUNDO (DSCOVR/EPIC)</div>
+        <div class="epic-desc">Fotos reales de la Tierra tomadas desde 1.5 millones de km por el satelite DSCOVR en el punto L1 — vista similar a la de la tripulacion de Artemis II</div>
+        <div class="epic-grid" id="epic-grid">Cargando imagenes EPIC...</div>
+      </section>
+
+      <!-- ===== APOD ===== -->
+      <section class="card">
+        <div class="card-title"><span class="accent"></span>FOTO DEL DIA (APOD)</div>
+        <div id="apod-content">Cargando...</div>
+      </section>
+
+      <!-- ===== Near Earth Objects ===== -->
+      <section class="card" style="grid-column: 1 / -1;">
+        <div class="card-title"><span class="accent"></span>OBJETOS CERCANOS A LA TIERRA HOY (NeoWs)</div>
+        <div class="neo-summary" id="neo-summary">Cargando...</div>
+        <div class="neo-table-wrap">
+          <table class="neo-table" id="neo-table"></table>
+        </div>
       </section>
 
       <!-- ===== Mission Data ===== -->
@@ -353,6 +401,7 @@
   </script>
   <script src="js/telemetry.js"></script>
   <script src="js/datasources.js"></script>
+  <script src="js/widgets.js"></script>
   <script type="module" src="js/trajectory3d.js"></script>
   <script src="js/app.js" defer></script>
 </body>

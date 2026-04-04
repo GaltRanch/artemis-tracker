@@ -107,7 +107,51 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ===== 4. NASA Images API Proxy =====
+  // ===== 4. EPIC (Earth from deep space) =====
+  if (url.startsWith('/api/epic')) {
+    const epicPath = url.slice('/api/epic'.length) || '/api/natural';
+    const cached = getCached('epic:' + epicPath, CACHE_TTL_LONG);
+    if (cached) { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); res.end(cached); return; }
+    try {
+      const result = await queuedFetch(`https://epic.gsfc.nasa.gov${epicPath}`);
+      proxyResponse(res, result, 'epic:' + epicPath, CACHE_TTL_LONG);
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // ===== 5. APOD =====
+  if (url === '/api/apod') {
+    const cached = getCached('apod', CACHE_TTL_LONG);
+    if (cached) { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); res.end(cached); return; }
+    try {
+      const result = await queuedFetch(`https://api.nasa.gov/planetary/apod?api_key=${NASA_API_KEY}`);
+      proxyResponse(res, result, 'apod', CACHE_TTL_LONG);
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // ===== 6. NeoWs (Near Earth Objects) =====
+  if (url.startsWith('/api/neo')) {
+    const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
+    const cached = getCached('neo:' + query, CACHE_TTL_LONG);
+    if (cached) { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); res.end(cached); return; }
+    try {
+      const result = await queuedFetch(`https://api.nasa.gov/neo/rest/v1/feed?${query}&api_key=${NASA_API_KEY}`);
+      proxyResponse(res, result, 'neo:' + query, CACHE_TTL_LONG);
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // ===== 7. NASA Images API Proxy =====
   if (url.startsWith('/api/images?')) {
     const query = url.slice('/api/images?'.length);
     const cached = getCached('img:' + query, CACHE_TTL_LONG);

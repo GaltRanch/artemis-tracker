@@ -768,6 +768,169 @@ main {
   margin-top: 0.15rem;
 }
 
+/* ===== EPIC ===== */
+.epic-desc {
+  font-size: 0.65rem; color: var(--text-muted);
+  margin-bottom: 0.5rem; line-height: 1.5;
+}
+
+.epic-grid {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.3rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.epic-item {
+  flex: 0 0 auto;
+  width: 140px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-card-inner);
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.epic-item:hover { border-color: rgba(6,214,214,0.2); }
+
+.epic-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+  margin: 8px auto 0;
+  width: calc(100% - 16px);
+}
+
+.epic-item .ei-date {
+  padding: 0.3rem;
+  font-size: 0.5rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ===== APOD ===== */
+.apod-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.apod-wrap img {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.apod-wrap .apod-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.apod-wrap .apod-text {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.apod-wrap .apod-date {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+}
+
+/* ===== NEO ===== */
+.neo-summary {
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.neo-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.neo-stat .ns-val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.neo-stat .ns-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.neo-stat.safe .ns-val { color: var(--accent-green); }
+.neo-stat.warn .ns-val { color: var(--accent-orange); }
+.neo-stat.danger .ns-val { color: var(--accent-red); }
+
+.neo-table-wrap {
+  overflow-x: auto;
+}
+
+.neo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;
+}
+
+.neo-table th {
+  font-family: var(--font-display);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+
+.neo-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid rgba(20,30,58,0.3);
+  color: var(--text-secondary);
+}
+
+.neo-table tr:hover td {
+  background: rgba(6,214,214,0.02);
+}
+
+.neo-table .hazardous { color: var(--accent-red); font-weight: 700; }
+.neo-table .safe { color: var(--accent-green); }
+
+/* ===== Crew Firsts ===== */
+.firsts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.first-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  background: var(--bg-card-inner);
+  border-radius: 6px;
+}
+
+.first-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1; }
+.first-info { display: flex; flex-direction: column; }
+.first-name { font-size: 0.75rem; font-weight: 700; }
+.first-desc { font-size: 0.6rem; color: var(--text-muted); line-height: 1.4; }
+
 /* ===== Footer ===== */
 footer {
   position: relative; z-index: 1;

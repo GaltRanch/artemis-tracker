@@ -67,7 +67,7 @@ class TelemetryEngine {
       phase,
       dataAge: interp.dataAge || 0,
       dataSource: this.apiAvailable
-        ? `NASA/JPL Horizons — dato de hace ${interp.dataAge || '?'} min`
+        ? `NASA/JPL Horizons — interpolado entre puntos reales (refresco cada 5 min)`
         : 'Conectando con NASA/JPL Horizons...'
     };
   }
@@ -296,32 +296,35 @@ class TelemetryEngine {
   }
 
   _interpolateVectors(nowMs) {
-    if (this.vectorPoints.length < 1) {
-      return { distEarth: 0, distMoon: 0, velocity: 0, rangeRate: 0 };
+    if (this.vectorPoints.length < 2) {
+      return { distEarth: 0, distMoon: 0, velocity: 0, rangeRate: 0, dataAge: 0 };
     }
 
-    // Use the closest data point — no interpolation, only real JPL data
-    let closest = this.vectorPoints[0];
-    let minDiff = Math.abs(nowMs - closest.timestamp);
+    // Find bracketing points for interpolation
+    let before = this.vectorPoints[0];
+    let after = this.vectorPoints[this.vectorPoints.length - 1];
 
-    for (const pt of this.vectorPoints) {
-      const diff = Math.abs(nowMs - pt.timestamp);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = pt;
+    for (let i = 0; i < this.vectorPoints.length - 1; i++) {
+      if (this.vectorPoints[i].timestamp <= nowMs && this.vectorPoints[i + 1].timestamp >= nowMs) {
+        before = this.vectorPoints[i];
+        after = this.vectorPoints[i + 1];
+        break;
       }
     }
 
-    // Return closest real data point — no interpolation
-    const ageMs = Math.abs(nowMs - closest.timestamp);
+    const span = after.timestamp - before.timestamp;
+    const t = span > 0 ? Math.max(0, Math.min(1, (nowMs - before.timestamp) / span)) : 0;
+
+    // Age = time since the "before" data point
+    const ageMs = nowMs - before.timestamp;
     const ageMins = Math.round(ageMs / 60000);
 
     return {
-      distEarth: closest.distEarth,
-      distMoon: closest.distMoon,
-      velocity: closest.velocityKms * 3600,
-      rangeRate: closest.rangeRate,
-      dataAge: ageMins, // minutes since this data point
+      distEarth: before.distEarth + (after.distEarth - before.distEarth) * t,
+      distMoon: before.distMoon + (after.distMoon - before.distMoon) * t,
+      velocity: (before.velocityKms + (after.velocityKms - before.velocityKms) * t) * 3600,
+      rangeRate: before.rangeRate + (after.rangeRate - before.rangeRate) * t,
+      dataAge: ageMins,
     };
   }
 

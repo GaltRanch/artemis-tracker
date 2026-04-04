@@ -91,9 +91,20 @@ const dom = {
   dsnStatus: $('dsn-status'), dsnGrid: $('dsn-grid'),
   swRisk: $('sw-risk'), swDetails: $('sw-details'),
   gallery: $('gallery'),
+  epicGrid: $('epic-grid'),
+  apodContent: $('apod-content'),
+  neoSummary: $('neo-summary'), neoTable: $('neo-table'),
 };
 
 function fmt(n) { return n.toLocaleString('es-ES'); }
+
+// ===== Widgets =====
+const dsnMap = new DSNMap('dsn-map-canvas');
+const radGauge = new RadiationGauge('radiation-gauge');
+const earthView = new EarthViewSim('earth-view-canvas');
+const neoRadar = new NEORadar('neo-radar-canvas');
+const swTimeline = new SpaceWeatherTimeline('sw-timeline');
+renderCrewFirsts('crew-firsts');
 
 // ===== Timeline =====
 function updateTimeline(elapsedSeconds) {
@@ -186,6 +197,20 @@ function renderSpaceWeather() {
     html += `<div><strong>Eyecciones de masa coronal:</strong> ${sw.cmeCount} en los ultimos 7 dias</div>`;
   }
 
+  // RBE
+  if (sw.rbeCount > 0) {
+    html += `<div style="margin-bottom:0.4rem"><strong>Radiacion cinturones Van Allen:</strong> ${sw.rbeCount} eventos de enhancement`;
+    if (sw.rbeEvents.length > 0) html += ` — ultimo: ${new Date(sw.rbeEvents[sw.rbeEvents.length-1].time).toLocaleString('es-ES')}`;
+    html += `</div>`;
+  }
+
+  // IPS
+  if (sw.ipsEvents?.length > 0) {
+    html += `<div style="margin-bottom:0.4rem"><strong>Choques interplanetarios:</strong> ${sw.ipsEvents.length} detectados — `;
+    html += sw.ipsEvents.map(i => `${i.location} (${new Date(i.time).toLocaleDateString('es-ES')})`).join(', ');
+    html += `</div>`;
+  }
+
   dom.swDetails.innerHTML = html || '<div>Sin eventos significativos</div>';
 }
 
@@ -237,11 +262,96 @@ function update() {
   updateTimeline(t.met.elapsedSeconds);
 }
 
-// ===== Slow update loop for DSN/Weather/Gallery =====
+// ===== EPIC Renderer =====
+function renderEPIC() {
+  const epic = dataSources.epic;
+  if (!epic || epic.length === 0) return;
+
+  dom.epicGrid.innerHTML = epic.map(img => `
+    <a class="epic-item" href="${img.urlFull}" target="_blank" rel="noopener">
+      <img src="${img.url}" alt="Earth from DSCOVR" loading="lazy">
+      <div class="ei-date">${img.date}</div>
+    </a>
+  `).join('');
+}
+
+// ===== APOD Renderer =====
+function renderAPOD() {
+  const apod = dataSources.apod;
+  if (!apod) return;
+
+  if (apod.mediaType === 'image') {
+    dom.apodContent.innerHTML = `
+      <div class="apod-wrap">
+        <a href="${apod.hdurl || apod.url}" target="_blank" rel="noopener">
+          <img src="${apod.url}" alt="${apod.title}" loading="lazy">
+        </a>
+        <div class="apod-title">${apod.title}</div>
+        <div class="apod-date">${apod.date}</div>
+        <div class="apod-text">${apod.explanation}</div>
+      </div>`;
+  } else {
+    dom.apodContent.innerHTML = `
+      <div class="apod-wrap">
+        <div class="apod-title">${apod.title}</div>
+        <div class="apod-date">${apod.date}</div>
+        <div class="apod-text">${apod.explanation}</div>
+        <a href="${apod.url}" target="_blank" rel="noopener" style="color:var(--accent-cyan);font-size:0.7rem">Ver contenido</a>
+      </div>`;
+  }
+}
+
+// ===== NEO Renderer =====
+function renderNEO() {
+  const neo = dataSources.neo;
+  if (!neo) return;
+
+  dom.neoSummary.innerHTML = `
+    <div class="neo-stat safe"><span class="ns-val">${neo.count}</span><span class="ns-label">objetos<br>cercanos hoy</span></div>
+    <div class="neo-stat ${neo.hazardous > 0 ? 'danger' : 'safe'}"><span class="ns-val">${neo.hazardous}</span><span class="ns-label">potencialmente<br>peligrosos</span></div>
+    <div class="neo-stat ${neo.sentry > 0 ? 'warn' : 'safe'}"><span class="ns-val">${neo.sentry}</span><span class="ns-label">monitoreados<br>(Sentry)</span></div>
+  `;
+
+  if (neo.objects.length > 0) {
+    dom.neoTable.innerHTML = `
+      <thead><tr>
+        <th>Nombre</th><th>Diametro</th><th>Velocidad</th><th>Distancia</th><th>Dist. Lunar</th><th>Riesgo</th>
+      </tr></thead>
+      <tbody>${neo.objects.map(n => `
+        <tr>
+          <td>${n.name}</td>
+          <td>${n.diameter}</td>
+          <td>${n.velocity} km/h</td>
+          <td>${n.missDistance} km</td>
+          <td>${n.missDistanceLunar} LD</td>
+          <td class="${n.hazardous ? 'hazardous' : 'safe'}">${n.hazardous ? 'PELIGROSO' : 'Seguro'}</td>
+        </tr>
+      `).join('')}</tbody>`;
+  }
+}
+
+// ===== Slow update loop =====
 function updateExtras() {
+  const t = telemetry.getTelemetry();
+
   renderDSN();
   renderSpaceWeather();
+  renderEPIC();
+  renderAPOD();
+  renderNEO();
   renderGallery();
+
+  // Canvas widgets
+  dsnMap.draw(dataSources.dsn);
+  radGauge.draw(dataSources.spaceWeather, t.distEarth);
+  swTimeline.draw(dataSources.spaceWeather, MISSION.launchDate);
+  neoRadar.draw(dataSources.neo);
+
+  // Earth view — use EPIC image if available
+  if (dataSources.epic?.length > 0) {
+    earthView.setEpicImage(dataSources.epic[0].url);
+  }
+  earthView.draw(t.distEarth);
 }
 
 update();
