@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artemis II - Orion Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="stars-bg"></div>
+
+  <header>
+    <div class="header-content">
+      <div class="logo">
+        <svg class="nasa-icon" viewBox="0 0 40 40" width="40" height="40">
+          <circle cx="20" cy="20" r="18" fill="none" stroke="#FC3D21" stroke-width="2"/>
+          <path d="M10 20 Q15 10 20 20 Q25 30 30 20" fill="none" stroke="#fff" stroke-width="2"/>
+          <circle cx="20" cy="20" r="3" fill="#FC3D21"/>
+        </svg>
+        <div>
+          <h1>ARTEMIS II</h1>
+          <span class="subtitle">Orion Spacecraft Tracker</span>
+        </div>
+      </div>
+      <div class="mission-clock">
+        <span class="clock-label">TIEMPO DE MISION (MET)</span>
+        <span id="met-clock" class="clock-value">T+ 00:00:00:00</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Status Banner -->
+    <section class="status-banner">
+      <div class="status-indicator live"></div>
+      <span id="mission-phase">EN RUTA HACIA LA LUNA</span>
+      <span class="separator">|</span>
+      <span id="current-date-display"></span>
+    </section>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+
+      <!-- Trajectory Visualization -->
+      <section class="card trajectory-card">
+        <h2>Trayectoria en Tiempo Real</h2>
+        <canvas id="trajectory-canvas"></canvas>
+        <div class="trajectory-legend">
+          <span><i class="dot earth"></i> Tierra</span>
+          <span><i class="dot moon"></i> Luna</span>
+          <span><i class="dot orion"></i> Orion</span>
+          <span><i class="line planned"></i> Trayectoria planificada</span>
+          <span><i class="line traveled"></i> Recorrido</span>
+        </div>
+      </section>
+
+      <!-- Telemetry Panel -->
+      <section class="card telemetry-card">
+        <h2>Telemetria</h2>
+        <div class="telemetry-grid">
+          <div class="telemetry-item">
+            <span class="telem-label">Distancia a Tierra</span>
+            <span id="dist-earth" class="telem-value">--</span>
+            <span class="telem-unit">km</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telem-label">Distancia a Luna</span>
+            <span id="dist-moon" class="telem-value">--</span>
+            <span class="telem-unit">km</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telem-label">Velocidad</span>
+            <span id="velocity" class="telem-value">--</span>
+            <span class="telem-unit">km/h</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telem-label">Altitud</span>
+            <span id="altitude" class="telem-value">--</span>
+            <span class="telem-unit">km</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telem-label">Aceleracion</span>
+            <span id="acceleration" class="telem-value">--</span>
+            <span class="telem-unit">m/s2</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="telem-label">Temperatura Ext.</span>
+            <span id="temp-ext" class="telem-value">--</span>
+            <span class="telem-unit">C</span>
+          </div>
+        </div>
+
+        <h3 class="subsection-title">Sistemas</h3>
+        <div class="systems-grid">
+          <div class="system-item ok">
+            <span class="sys-status"></span>
+            <span>Soporte Vital (ECLSS)</span>
+          </div>
+          <div class="system-item ok">
+            <span class="sys-status"></span>
+            <span>Energia / Paneles Solares</span>
+          </div>
+          <div class="system-item ok">
+            <span class="sys-status"></span>
+            <span>Comunicaciones</span>
+          </div>
+          <div class="system-item ok">
+            <span class="sys-status"></span>
+            <span>Propulsion (OMS)</span>
+          </div>
+          <div class="system-item ok">
+            <span class="sys-status"></span>
+            <span>Navegacion</span>
+          </div>
+          <div class="system-item ok">
+            <span class="sys-status"></span>
+            <span>Escudo Termico</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Crew Card -->
+      <section class="card crew-card">
+        <h2>Tripulacion</h2>
+        <div class="crew-grid">
+          <div class="crew-member">
+            <div class="crew-avatar">RW</div>
+            <div class="crew-info">
+              <strong>Reid Wiseman</strong>
+              <span>Comandante</span>
+              <span class="crew-agency">NASA</span>
+            </div>
+          </div>
+          <div class="crew-member">
+            <div class="crew-avatar">VG</div>
+            <div class="crew-info">
+              <strong>Victor Glover</strong>
+              <span>Piloto</span>
+              <span class="crew-agency">NASA</span>
+            </div>
+          </div>
+          <div class="crew-member">
+            <div class="crew-avatar">CH</div>
+            <div class="crew-info">
+              <strong>Christina Koch</strong>
+              <span>Especialista de Mision</span>
+              <span class="crew-agency">NASA</span>
+            </div>
+          </div>
+          <div class="crew-member">
+            <div class="crew-avatar">JH</div>
+            <div class="crew-info">
+              <strong>Jeremy Hansen</strong>
+              <span>Especialista de Mision</span>
+              <span class="crew-agency">CSA</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mission Timeline -->
+      <section class="card timeline-card">
+        <h2>Cronograma de Mision</h2>
+        <div class="timeline" id="timeline">
+          <div class="timeline-event completed">
+            <div class="tl-marker"></div>
+            <div class="tl-content">
+              <span class="tl-time">T+00:00:00</span>
+              <strong>Lanzamiento SLS</strong>
+              <p>Despegue desde LC-39B, Kennedy Space Center</p>
+            </div>
+          </div>
+          <div class="timeline-event completed">
+            <div class="tl-marker"></div>
+            <div class="tl-content">
+              <span class="tl-time">T+00:08:30</span>
+              <strong>Separacion ICPS</strong>
+              <p>Insercion en orbita terrestre provisional</p>
+            </div>
+          </div>
+          <div class="timeline-event completed">
+            <div class="tl-marker"></div>
+            <div class="tl-content">
+              <span class="tl-time">T+01:30:00</span>
+              <strong>Inyeccion Translunar (TLI)</strong>
+              <p>Encendido del motor ICPS rumbo a la Luna</p>
+            </div>
+          </div>
+          <div class="timeline-event active">
+            <div class="tl-marker"></div>
+            <div class="tl-content">
+              <span class="tl-time">T+02:00:00 - T+04:00:00</span>
+              <strong>Crucero Translunar</strong>
+              <p>Viaje hacia la Luna, pruebas de sistemas</p>
+            </div>
+          </div>
+          <div class="timeline-event upcoming">
+            <div class="tl-marker"></div>
+            <div class="tl-content">
+              <span class="tl-time">~T+04:06:00</span>
+              <strong>Sobrevuelo Lunar</strong>
+              <p>Paso a ~8,900 km de la superficie lunar</p>
+            </div>
+          </div>
+          <div class="timeline-event upcoming">
+            <div class="tl-marker"></div>
+            <div class="tl-content">
+              <span class="tl-time">~T+05:00:00</span>
+              <strong>Crucero de Retorno</strong>
+              <p>Trayectoria de retorno libre hacia la Tierra</p>
+            </div>
+          </div>
+          <div class="timeline-event upcoming">
+            <div class="tl-marker"></div>
+            <div class="tl-content">
+              <span class="tl-time">~T+10:00:00</span>
+              <strong>Reentrada y Amerizaje</strong>
+              <p>Reentrada atmosferica y amerizaje en el Pacifico</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mission Stats -->
+      <section class="card stats-card">
+        <h2>Datos de Mision</h2>
+        <div class="stats-list">
+          <div class="stat-row">
+            <span>Vehiculo de lanzamiento</span>
+            <strong>SLS Block 1</strong>
+          </div>
+          <div class="stat-row">
+            <span>Nave</span>
+            <strong>Orion MPCV</strong>
+          </div>
+          <div class="stat-row">
+            <span>Modulo de servicio</span>
+            <strong>ESM (ESA)</strong>
+          </div>
+          <div class="stat-row">
+            <span>Tipo de mision</span>
+            <strong>Sobrevuelo lunar tripulado</strong>
+          </div>
+          <div class="stat-row">
+            <span>Duracion estimada</span>
+            <strong>~10 dias</strong>
+          </div>
+          <div class="stat-row">
+            <span>Fecha de lanzamiento</span>
+            <strong>2 Abril 2026</strong>
+          </div>
+          <div class="stat-row">
+            <span>Sitio de lanzamiento</span>
+            <strong>LC-39B, KSC, Florida</strong>
+          </div>
+          <div class="stat-row">
+            <span>Amerizaje estimado</span>
+            <strong>~12 Abril 2026</strong>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>Artemis II Tracker &mdash; Datos simulados basados en el perfil de mision NASA Artemis II</p>
+    <p>No es una fuente oficial de NASA. Proyecto educativo.</p>
+  </footer>
+
+  <script src="js/trajectory.js"></script>
+  <script src="js/telemetry.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
