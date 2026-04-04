@@ -4,7 +4,7 @@ Real-time mission tracker for NASA's Artemis program. Currently tracking **Artem
 
 Built with vanilla JS, Three.js for 3D visualization, and 7 NASA APIs providing live mission data.
 
-![Artemis II](https://www.nasa.gov/wp-content/uploads/2024/04/artemis-ii-crew.jpg)
+![Artemis II Crew](https://images-assets.nasa.gov/image/KSC-20230807-PH-KLS01_0518/KSC-20230807-PH-KLS01_0518~large.jpg)
 
 ## Live Data Sources
 
