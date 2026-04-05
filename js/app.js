@@ -326,13 +326,14 @@ function fmtDuration(ms) {
 function renderNEO() {
   const neo = dataSources.neo;
   if (!neo) return;
+  const t = (k) => i18n.t(k);
 
   // Summary
   dom.neoSummary.innerHTML = `
-    <div class="neo-stat safe"><span class="ns-val">${neo.count}</span><span class="ns-label">total<br>7 dias</span></div>
-    <div class="neo-stat safe"><span class="ns-val">${neo.upcomingCount}</span><span class="ns-label">proximos</span></div>
-    <div class="neo-stat ${neo.hazardousCount > 0 ? 'danger' : 'safe'}"><span class="ns-val">${neo.hazardousCount}</span><span class="ns-label">potencialmente<br>peligrosos (PHA)</span></div>
-    <div class="neo-stat ${neo.sentryCount > 0 ? 'warn' : 'safe'}"><span class="ns-val">${neo.sentryCount}</span><span class="ns-label">monitoreados<br>(Sentry)</span></div>
+    <div class="neo-stat safe"><span class="ns-val">${neo.count}</span><span class="ns-label">${t('neo_summary_total')}</span></div>
+    <div class="neo-stat safe"><span class="ns-val">${neo.upcomingCount}</span><span class="ns-label">${t('neo_summary_upcoming')}</span></div>
+    <div class="neo-stat ${neo.hazardousCount > 0 ? 'danger' : 'safe'}"><span class="ns-val">${neo.hazardousCount}</span><span class="ns-label">${t('neo_summary_pha')}</span></div>
+    <div class="neo-stat ${neo.sentryCount > 0 ? 'warn' : 'safe'}"><span class="ns-val">${neo.sentryCount}</span><span class="ns-label">${t('neo_summary_sentry')}</span></div>
   `;
 
   // Highlights
@@ -343,10 +344,10 @@ function renderNEO() {
     const countdown = na.approachTimeMs - Date.now();
     highlights += `
       <div class="neo-highlight next">
-        <div class="nh-label">PROXIMO APROXIMO</div>
+        <div class="nh-label">${t('neo_highlight_next')}</div>
         <div class="nh-name">${na.name}</div>
         <div class="nh-countdown">${fmtDuration(countdown)}</div>
-        <div class="nh-detail">${na.missDistanceLD.toFixed(1)} LD · ${na.diamAvg} m · ${Math.round(na.velocityKmh).toLocaleString('es-ES')} km/h</div>
+        <div class="nh-detail">${na.missDistanceLD.toFixed(1)} LD · ${na.diamAvg} m · ${Math.round(na.velocityKmh).toLocaleString(i18n.lang)} km/h</div>
       </div>`;
   }
 
@@ -354,7 +355,7 @@ function renderNEO() {
     const c = neo.closest;
     highlights += `
       <div class="neo-highlight closest">
-        <div class="nh-label">MAS CERCANO ESTA SEMANA</div>
+        <div class="nh-label">${t('neo_highlight_closest')}</div>
         <div class="nh-name">${c.name}</div>
         <div class="nh-detail">${c.missDistanceLD.toFixed(2)} LD (${fmtNum(Math.round(c.missDistanceKm))} km)<br>${c.approachDateStr}</div>
       </div>`;
@@ -364,9 +365,9 @@ function renderNEO() {
     const b = neo.biggest;
     highlights += `
       <div class="neo-highlight biggest">
-        <div class="nh-label">MAS GRANDE</div>
+        <div class="nh-label">${t('neo_highlight_biggest')}</div>
         <div class="nh-name">${b.name}</div>
-        <div class="nh-detail">${b.diamMin}-${b.diamMax} m de diametro<br>${b.approachDateStr}</div>
+        <div class="nh-detail">${b.diamMin}-${b.diamMax} ${t('neo_highlight_diameter')}<br>${b.approachDateStr}</div>
       </div>`;
   }
 
@@ -374,7 +375,7 @@ function renderNEO() {
     const f = neo.fastest;
     highlights += `
       <div class="neo-highlight fastest">
-        <div class="nh-label">MAS RAPIDO</div>
+        <div class="nh-label">${t('neo_highlight_fastest')}</div>
         <div class="nh-name">${f.name}</div>
         <div class="nh-detail">${fmtNum(Math.round(f.velocityKmh))} km/h (${f.velocityKms.toFixed(1)} km/s)<br>${f.approachDateStr}</div>
       </div>`;
@@ -390,14 +391,15 @@ function renderNEOTable() {
   const neo = dataSources.neo;
   const sentry = dataSources.sentry;
   if (!neo) return;
+  const t = (k) => i18n.t(k);
 
   let rows = [];
   let headers = '';
 
   if (neoActiveTab === 'upcoming') {
     headers = `<tr>
-      <th>Fecha</th><th>Nombre</th><th>Diametro</th><th>Velocidad</th>
-      <th>Dist.</th><th>Dist. Lunar</th><th>Riesgo</th>
+      <th>${t('neo_table_date')}</th><th>${t('neo_table_name')}</th><th>${t('neo_table_diameter')}</th><th>${t('neo_table_velocity')}</th>
+      <th>${t('neo_table_distance')}</th><th>${t('neo_table_lunar_dist')}</th><th>${t('neo_table_risk')}</th>
     </tr>`;
     rows = neo.upcoming.map(n => `
       <tr>
@@ -407,13 +409,13 @@ function renderNEOTable() {
         <td>${fmtNum(Math.round(n.velocityKmh))} km/h</td>
         <td>${fmtNum(Math.round(n.missDistanceKm))} km</td>
         <td>${n.missDistanceLD.toFixed(2)} LD</td>
-        <td class="${n.hazardous ? 'hazardous' : 'safe'}">${n.hazardous ? 'PHA' : 'Seguro'}</td>
+        <td class="${n.hazardous ? 'hazardous' : 'safe'}">${n.hazardous ? t('neo_risk_pha') : t('neo_risk_safe')}</td>
       </tr>
     `);
   } else if (neoActiveTab === 'hazardous') {
     headers = `<tr>
-      <th>Fecha</th><th>Nombre</th><th>Diametro</th><th>Velocidad</th>
-      <th>Dist. Lunar</th><th>Magnitud H</th>
+      <th>${t('neo_table_date')}</th><th>${t('neo_table_name')}</th><th>${t('neo_table_diameter')}</th><th>${t('neo_table_velocity')}</th>
+      <th>${t('neo_table_lunar_dist')}</th><th>${t('neo_table_magnitude')}</th>
     </tr>`;
     rows = neo.hazardous.map(n => `
       <tr>
@@ -425,14 +427,14 @@ function renderNEOTable() {
         <td>${n.magnitude?.toFixed(1) || '--'}</td>
       </tr>
     `);
-    if (rows.length === 0) rows = [`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem">Ningun PHA en los proximos 7 dias</td></tr>`];
+    if (rows.length === 0) rows = [`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem">${t('neo_no_pha')}</td></tr>`];
   } else if (neoActiveTab === 'sentry') {
     headers = `<tr>
-      <th>Designacion</th><th>Diametro</th><th>Rango</th>
-      <th>Prob. acumulada</th><th>Palermo max</th><th>Torino</th>
+      <th>${t('neo_table_designation')}</th><th>${t('neo_table_diameter')}</th><th>${t('neo_table_range')}</th>
+      <th>${t('neo_table_cum_prob')}</th><th>${t('neo_table_max_palermo')}</th><th>${t('neo_table_torino')}</th>
     </tr>`;
     if (!sentry) {
-      rows = [`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem">Cargando datos Sentry...</td></tr>`];
+      rows = [`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem">${t('neo_loading_sentry')}</td></tr>`];
     } else {
       rows = sentry.top10.map(s => {
         const probPct = (Math.pow(10, s.cumulativeProb) * 100).toExponential(2);
@@ -569,4 +571,29 @@ apiSettingsBtn?.addEventListener('click', () => {
 
 // Check on load
 checkApiConfig();
+
+// ===== Language Switcher =====
+
+function updateLangButtons() {
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === i18n.lang);
+  });
+}
+
+// Apply initial translations
+i18n.applyToDOM();
+updateLangButtons();
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    i18n.setLang(btn.dataset.lang);
+    updateLangButtons();
+  });
+});
+
+// Re-render dynamic content when language changes
+window.addEventListener('i18n-changed', () => {
+  updateExtras();
+  update();
+});
 

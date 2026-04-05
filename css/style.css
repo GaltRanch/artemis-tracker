@@ -1232,6 +1232,38 @@ main {
   line-height: 1.5;
 }
 
+/* Language switcher (floating) */
+.lang-switcher {
+  position: fixed;
+  bottom: 1rem; left: 1rem;
+  z-index: 200;
+  display: flex;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.lang-btn {
+  padding: 0.35rem 0.6rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.lang-btn:hover { color: var(--text-secondary); }
+
+.lang-btn.active {
+  background: rgba(6, 214, 214, 0.1);
+  color: var(--accent-cyan);
+}
+
 /* Settings button (floating) */
 .api-settings-btn {
   position: fixed;

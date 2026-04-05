@@ -73,18 +73,19 @@ class TelemetryEngine {
   }
 
   _getPhase(elapsedSec) {
-    if (elapsedSec < 1200) return 'LANZAMIENTO Y ASCENSO';
-    if (elapsedSec < 12258) return 'ORBITA TERRESTRE — DESPLIEGUE SOLAR';
-    if (elapsedSec < 46500) return 'MANIOBRAS ORBITALES';
-    if (elapsedSec < 90840) return 'ORBITA TERRESTRE ALTA';
-    if (elapsedSec < 91195) return 'INYECCION TRANSLUNAR (TLI)';
-    if (elapsedSec < 361740) return 'CRUCERO TRANSLUNAR';
-    if (elapsedSec < 375480) return 'ESFERA DE INFLUENCIA LUNAR';
-    if (elapsedSec < 434460 + 1800) return 'SOBREVUELO LUNAR — LADO OCULTO';
-    if (elapsedSec < 500520) return 'RETORNO — ESFERA LUNAR';
-    if (elapsedSec < 770940) return 'CRUCERO DE RETORNO';
-    if (elapsedSec < 772920) return 'REENTRADA ATMOSFERICA';
-    return 'AMERIZAJE';
+    const t = (k) => window.i18n ? window.i18n.t(k) : k;
+    if (elapsedSec < 1200) return t('phase_launch');
+    if (elapsedSec < 12258) return t('phase_orbit');
+    if (elapsedSec < 46500) return t('phase_maneuvers');
+    if (elapsedSec < 90840) return t('phase_high_orbit');
+    if (elapsedSec < 91195) return t('phase_tli');
+    if (elapsedSec < 361740) return t('phase_cruise');
+    if (elapsedSec < 375480) return t('phase_lunar_sphere');
+    if (elapsedSec < 434460 + 1800) return t('phase_flyby');
+    if (elapsedSec < 500520) return t('phase_return_sphere');
+    if (elapsedSec < 770940) return t('phase_return_cruise');
+    if (elapsedSec < 772920) return t('phase_reentry');
+    return t('phase_splashdown');
   }
 
   // ===== Fetch both VECTORS and OBSERVER data =====

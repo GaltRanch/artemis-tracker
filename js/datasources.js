@@ -203,10 +203,11 @@ class NASADataSources {
       const hasXFlare = flares.some(f => f.classType && f.classType.startsWith('X'));
       const hasMFlare = flares.some(f => f.classType && f.classType.startsWith('M'));
       const hasRBE = rbeCount > 0;
-      let riskLevel = 'BAJO';
+      const t = (k) => window.i18n ? window.i18n.t(k) : k;
+      let riskLevel = t('sw_risk_low');
       let riskColor = 'green';
-      if (hasXFlare || maxKp >= 7) { riskLevel = 'ALTO'; riskColor = 'red'; }
-      else if (hasMFlare || maxKp >= 5 || hasRBE) { riskLevel = 'MODERADO'; riskColor = 'orange'; }
+      if (hasXFlare || maxKp >= 7) { riskLevel = t('sw_risk_high'); riskColor = 'red'; }
+      else if (hasMFlare || maxKp >= 5 || hasRBE) { riskLevel = t('sw_risk_moderate'); riskColor = 'orange'; }
 
       this.spaceWeather = {
         flares, storms, cmeCount, notifications,
