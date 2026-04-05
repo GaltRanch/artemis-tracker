@@ -525,6 +525,36 @@ class TrajectoryRenderer {
 
   // ===== Drawing methods =====
 
+  // Draw text at scene position but with constant screen size (cancels zoom)
+  _text(ctx, x, y, text, options = {}) {
+    const {
+      color = '#64748b',
+      font = '10px "Inter", sans-serif',
+      align = 'center',
+      baseline = 'alphabetic',
+    } = options;
+    ctx.save();
+    ctx.translate(x, y);
+    const s = 1 / this._zoom;
+    ctx.scale(s, s);
+    ctx.fillStyle = color;
+    ctx.font = font;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+  }
+
+  // Draw a shape (dot, arrow) at scene position with constant screen size
+  _drawAtScreenScale(ctx, x, y, drawFn) {
+    ctx.save();
+    ctx.translate(x, y);
+    const s = 1 / this._zoom;
+    ctx.scale(s, s);
+    drawFn(ctx);
+    ctx.restore();
+  }
+
   _drawMoonOrbit(ctx, scene) {
     const pts = scene.moonOrbitPts;
     if (!pts || pts.length < 2) return;
@@ -544,10 +574,10 @@ class TrajectoryRenderer {
     let topPt = pts[0];
     for (const p of pts) { if (p.y < topPt.y) topPt = p; }
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.2)';
-    ctx.font = '600 7px "Orbitron", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('ORBITA LUNAR', topPt.x, topPt.y - 8);
+    this._text(ctx, topPt.x, topPt.y - 8 / this._zoom, 'ORBITA LUNAR', {
+      color: 'rgba(148, 163, 184, 0.3)',
+      font: '600 9px "Orbitron", monospace',
+    });
 
     // Flyby point marker — where the Moon will be during closest approach
     if (scene.flybyMoonPos) {
@@ -571,13 +601,14 @@ class TrajectoryRenderer {
       ctx.stroke();
 
       // Label
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.6)';
-      ctx.font = '700 7px "Orbitron", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('FLYBY', fp.x, fp.y - 12);
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.35)';
-      ctx.font = '500 6px "Inter", sans-serif';
-      ctx.fillText('6-7 Abr ~23:06 UTC', fp.x, fp.y + 16);
+      this._text(ctx, fp.x, fp.y - 14 / this._zoom, 'FLYBY', {
+        color: 'rgba(139, 92, 246, 0.7)',
+        font: '700 9px "Orbitron", monospace',
+      });
+      this._text(ctx, fp.x, fp.y + 18 / this._zoom, '6-7 Abr ~23:06 UTC', {
+        color: 'rgba(139, 92, 246, 0.5)',
+        font: '500 8px "Inter", sans-serif',
+      });
     }
 
     ctx.restore();
@@ -615,11 +646,11 @@ class TrajectoryRenderer {
     // "intercepta aqui" label
     const mx = (orion.x + flyby.x) / 2;
     const my = (orion.y + flyby.y) / 2;
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.4)';
-    ctx.font = '600 7px "Orbitron", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('RUTA INTERCEPTACION', mx, my - 6);
     ctx.restore();
+    this._text(ctx, mx, my - 6 / this._zoom, 'RUTA INTERCEPTACION', {
+      color: 'rgba(249, 115, 22, 0.5)',
+      font: '600 8px "Orbitron", monospace',
+    });
   }
 
   // Arrow showing Moon's direction of motion on its orbit
@@ -790,9 +821,10 @@ class TrajectoryRenderer {
     ctx.beginPath(); ctx.arc(x, y, r + 1, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(96,165,250,0.2)'; ctx.lineWidth = 1; ctx.stroke();
 
-    ctx.fillStyle = 'rgba(148,163,184,0.5)';
-    ctx.font = '700 8px "Orbitron", monospace'; ctx.textAlign = 'center';
-    ctx.fillText('TIERRA', x, y + r + 14);
+    this._text(ctx, x, y + r + 14 / this._zoom, 'TIERRA', {
+      color: 'rgba(148,163,184,0.6)',
+      font: '700 9px "Orbitron", monospace',
+    });
   }
 
   _drawMoon(ctx, x, y, r) {
@@ -813,9 +845,10 @@ class TrajectoryRenderer {
     }
     ctx.restore();
 
-    ctx.fillStyle = 'rgba(148,163,184,0.5)';
-    ctx.font = '700 8px "Orbitron", monospace'; ctx.textAlign = 'center';
-    ctx.fillText('LUNA', x, y + r + 14);
+    this._text(ctx, x, y + r + 14 / this._zoom, 'LUNA', {
+      color: 'rgba(148,163,184,0.6)',
+      font: '700 9px "Orbitron", monospace',
+    });
   }
 
   _drawOrion(ctx, x, y, w) {
@@ -837,13 +870,14 @@ class TrajectoryRenderer {
     ctx.strokeStyle = `rgba(255,255,255,${0.3 + 0.2 * Math.sin(t * 1.5)})`;
     ctx.lineWidth = 1; ctx.stroke();
 
-    ctx.fillStyle = '#f97316';
-    ctx.font = `900 ${Math.max(8, w * 0.007)}px "Orbitron", monospace`;
-    ctx.textAlign = 'center';
-    ctx.fillText('ORION', x, y - s * 3);
-    ctx.fillStyle = 'rgba(249,115,22,0.45)';
-    ctx.font = `600 ${Math.max(6, w * 0.005)}px "Inter", sans-serif`;
-    ctx.fillText('"INTEGRITY"', x, y - s * 3 + 11);
+    this._text(ctx, x, (y - s * 3) - 2 / this._zoom, 'ORION', {
+      color: '#f97316',
+      font: '900 10px "Orbitron", monospace',
+    });
+    this._text(ctx, x, (y - s * 3) + 9 / this._zoom, '"INTEGRITY"', {
+      color: 'rgba(249,115,22,0.5)',
+      font: '600 7px "Inter", sans-serif',
+    });
   }
 
   _drawDistLabel(ctx, x1, y1, x2, y2, distKm, textColor, lineColor) {
@@ -853,17 +887,17 @@ class TrajectoryRenderer {
     ctx.lineWidth = 0.8;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
 
+    ctx.restore();
     if (distKm > 0) {
       const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
       const label = distKm >= 1000
         ? (distKm / 1000).toFixed(1).replace('.', ',') + 'k km'
         : Math.round(distKm) + ' km';
-      ctx.fillStyle = textColor;
-      ctx.font = '600 9px "Inter", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(label, mx, my - 5);
+      this._text(ctx, mx, my - 5 / this._zoom, label, {
+        color: textColor,
+        font: '600 10px "Inter", sans-serif',
+      });
     }
-    ctx.restore();
   }
 
   _drawTLIMarker(ctx, scene, config) {
@@ -890,11 +924,12 @@ class TrajectoryRenderer {
       ctx.closePath();
       ctx.fill();
 
-      ctx.fillStyle = 'rgba(251,191,36,0.55)';
-      ctx.font = '700 8px "Orbitron", monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('TLI', tliPt.x + 7, tliPt.y + 3);
       ctx.restore();
+      this._text(ctx, tliPt.x + 10 / this._zoom, tliPt.y + 3 / this._zoom, 'TLI', {
+        color: 'rgba(251,191,36,0.7)',
+        font: '700 9px "Orbitron", monospace',
+        align: 'left',
+      });
     }
   }
 
