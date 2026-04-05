@@ -275,28 +275,30 @@
         </div>
       </section>
 
-      <!-- ===== Live Feeds — Native HLS (no YouTube) ===== -->
+      <!-- ===== Live Feeds ===== -->
       <section class="card" style="grid-column: 1 / -1;">
-        <div class="card-title"><span class="accent"></span>NASA TV EN VIVO — STREAM DIRECTO</div>
-        <div class="hls-player">
-          <video id="nasa-tv-player" controls playsinline preload="none" poster=""></video>
-          <div class="hls-controls">
-            <button class="hls-btn active" data-stream="public">NASA Public</button>
-            <button class="hls-btn" data-stream="media">NASA Media</button>
-            <span class="hls-status" id="hls-status">Pausado</span>
-          </div>
-          <div class="hls-note">
-            Stream directo desde nasa-i.akamaihd.net · 24/7 en vivo · Cuando Artemis II tiene evento vas a escuchar Mission Control / CAPCOM
-          </div>
-        </div>
-        <div class="live-feeds" style="margin-top:1rem">
+        <div class="card-title"><span class="accent"></span>COBERTURA EN VIVO — NASA TV / ARTEMIS II</div>
+        <div class="live-feeds">
           <div class="live-feed">
-            <div class="feed-label">VISTAS EN VIVO DESDE ORION (YouTube)</div>
+            <div class="feed-label">MISION ARTEMIS II (CAPCOM + Mission Control)</div>
+            <iframe src="https://www.youtube.com/embed/m3kR2KK8TEs?autoplay=0&mute=1"
+              title="Artemis II Live Coverage" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen loading="lazy"></iframe>
+          </div>
+          <div class="live-feed">
+            <div class="feed-label">VISTAS EN VIVO DESDE ORION</div>
             <iframe src="https://www.youtube.com/embed/6RwfNBtepa4?autoplay=0&mute=1"
               title="Live Views From Orion" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen loading="lazy"></iframe>
           </div>
+        </div>
+        <div class="feed-hls">
+          <span class="feed-hls-label">Tambien disponible en:</span>
+          <a href="https://plus.nasa.gov/" target="_blank" rel="noopener">NASA+ (oficial)</a>
+          <a href="https://www.nasa.gov/live/" target="_blank" rel="noopener">NASA Live</a>
+          <a href="https://www.youtube.com/@NASA/streams" target="_blank" rel="noopener">NASA YouTube</a>
         </div>
       </section>
 
@@ -436,7 +438,6 @@
     }
   }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
   <script src="js/telemetry.js"></script>
   <script src="js/datasources.js"></script>
   <script src="js/widgets.js"></script>

@@ -198,6 +198,51 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ===== 8. HLS Stream Proxy (NASA TV) =====
+  // Proxies ntv1.akamaized.net and ntv2.akamaized.net to bypass CORS
+  if (url.startsWith('/hls/')) {
+    // Determine which host based on path segment
+    let hlsPath = url; // /hls/live/.../foo.m3u8 or .ts
+    const host = url.includes('2013923') ? 'ntv2.akamaized.net' : 'ntv1.akamaized.net';
+    const target = `https://${host}${hlsPath}`;
+
+    https.get(target, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://www.nasa.gov/',
+      }
+    }, (apiRes) => {
+      // For m3u8 manifests, rewrite segment URLs to go through proxy
+      if (hlsPath.endsWith('.m3u8')) {
+        let body = '';
+        apiRes.on('data', (chunk) => body += chunk);
+        apiRes.on('end', () => {
+          // Rewrite relative segment URLs to absolute (they'll be fetched via /hls/... too)
+          // Since segments are in the same directory, relative URLs already work.
+          // But we need to handle absolute URLs if any.
+          res.writeHead(apiRes.statusCode, {
+            'Content-Type': 'application/vnd.apple.mpegurl',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'no-cache',
+          });
+          res.end(body);
+        });
+      } else {
+        // Segment (.ts) — stream directly
+        res.writeHead(apiRes.statusCode, {
+          'Content-Type': apiRes.headers['content-type'] || 'video/mp2t',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-cache',
+        });
+        apiRes.pipe(res);
+      }
+    }).on('error', (err) => {
+      res.writeHead(502);
+      res.end('HLS proxy error: ' + err.message);
+    });
+    return;
+  }
+
   // ===== 7. NASA Images API Proxy =====
   if (url.startsWith('/api/images?')) {
     const query = url.slice('/api/images?'.length);
