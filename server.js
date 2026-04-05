@@ -183,6 +183,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ===== CNEOS Close Approach Data =====
+  if (url.startsWith('/api/cad')) {
+    const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
+    const cached = getCached('cad:' + query, CACHE_TTL_LONG);
+    if (cached) { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); res.end(cached); return; }
+    try {
+      const result = await queuedFetch(`https://ssd-api.jpl.nasa.gov/cad.api?${query}`);
+      proxyResponse(res, result, 'cad:' + query, CACHE_TTL_LONG);
+    } catch (err) {
+      res.writeHead(502); res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // ===== CNEOS Sentry (impact risk) =====
+  if (url.startsWith('/api/sentry')) {
+    const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
+    const cached = getCached('sentry:' + query, CACHE_TTL_LONG);
+    if (cached) { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); res.end(cached); return; }
+    try {
+      const result = await queuedFetch(`https://ssd-api.jpl.nasa.gov/sentry.api?${query}`);
+      proxyResponse(res, result, 'sentry:' + query, CACHE_TTL_LONG);
+    } catch (err) {
+      res.writeHead(502); res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // ===== NEO Lookup (detailed asteroid data) =====
+  if (url.startsWith('/api/neo/lookup/')) {
+    const id = url.slice('/api/neo/lookup/'.length);
+    const cached = getCached('neolookup:' + id, CACHE_TTL_LONG);
+    if (cached) { res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); res.end(cached); return; }
+    try {
+      const result = await queuedFetch(`https://api.nasa.gov/neo/rest/v1/neo/${id}?api_key=${NASA_API_KEY}`);
+      proxyResponse(res, result, 'neolookup:' + id, CACHE_TTL_LONG);
+    } catch (err) {
+      res.writeHead(502); res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
   // ===== 6. NeoWs (Near Earth Objects) =====
   if (url.startsWith('/api/neo')) {
     const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';

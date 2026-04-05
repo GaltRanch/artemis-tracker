@@ -361,12 +361,32 @@
         <div id="apod-content">Cargando...</div>
       </section>
 
-      <!-- ===== Near Earth Objects ===== -->
+      <!-- ===== Near Earth Objects — Expanded ===== -->
       <section class="card" style="grid-column: 1 / -1;">
-        <div class="card-title"><span class="accent"></span>OBJETOS CERCANOS A LA TIERRA HOY (NeoWs)</div>
+        <div class="card-title"><span class="accent"></span>OBJETOS CERCANOS A LA TIERRA — PROXIMOS 7 DIAS</div>
+
+        <!-- Summary stats -->
         <div class="neo-summary" id="neo-summary">Cargando...</div>
+
+        <!-- Next approach countdown -->
+        <div class="neo-highlights" id="neo-highlights"></div>
+
+        <!-- Tabs -->
+        <div class="neo-tabs">
+          <button class="neo-tab active" data-tab="upcoming">Proximos 7 dias</button>
+          <button class="neo-tab" data-tab="hazardous">Potencialmente peligrosos</button>
+          <button class="neo-tab" data-tab="sentry">Sentry (monitoreados)</button>
+        </div>
+
         <div class="neo-table-wrap">
           <table class="neo-table" id="neo-table"></table>
+        </div>
+
+        <div class="neo-legend">
+          <span><strong>LD</strong> = Distancia Lunar (384.400 km)</span>
+          <span><strong>H (magnitud)</strong> = cuanto mas bajo, mas grande y/o brillante</span>
+          <span><strong>Palermo</strong> = escala de riesgo de impacto (log10). -2 = bajo, 0 = similar al riesgo de fondo</span>
+          <span><strong>Torino</strong> = 0-10. 0 = sin riesgo, 10 = colision cierta global</span>
         </div>
       </section>
 

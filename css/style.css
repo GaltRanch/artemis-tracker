@@ -919,10 +919,99 @@ main {
 /* ===== NEO ===== */
 .neo-summary {
   font-size: 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   display: flex;
-  gap: 1rem;
+  gap: 1.2rem;
   flex-wrap: wrap;
+  padding: 0.6rem 0.7rem;
+  background: var(--bg-card-inner);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.neo-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.neo-highlight {
+  padding: 0.6rem 0.7rem;
+  background: var(--bg-card-inner);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  border-left: 2px solid var(--accent-cyan);
+}
+
+.neo-highlight.next { border-left-color: var(--accent-orange); }
+.neo-highlight.closest { border-left-color: var(--accent-red); }
+.neo-highlight.biggest { border-left-color: var(--gold); }
+.neo-highlight.fastest { border-left-color: var(--accent-purple); }
+
+.neo-highlight .nh-label {
+  font-size: 0.5rem; text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.neo-highlight .nh-name {
+  font-size: 0.8rem; font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.2rem;
+}
+.neo-highlight .nh-detail {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.neo-highlight .nh-countdown {
+  font-family: var(--font-display);
+  font-size: 0.9rem; font-weight: 700;
+  color: var(--accent-orange);
+  margin-top: 0.2rem;
+}
+
+.neo-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.neo-tab {
+  padding: 0.4rem 0.7rem;
+  background: var(--bg-card-inner);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.55rem; font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.neo-tab:hover { color: var(--text-secondary); border-color: var(--text-muted); }
+
+.neo-tab.active {
+  background: rgba(6, 214, 214, 0.08);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.neo-legend {
+  margin-top: 0.6rem;
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.neo-legend strong {
+  color: var(--text-secondary);
 }
 
 .neo-stat {
