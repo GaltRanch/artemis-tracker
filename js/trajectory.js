@@ -170,7 +170,7 @@ class TrajectoryRenderer {
         COMMAND: "'301'", CENTER: "'@399'",
         EPHEM_TYPE: "'VECTORS'",
         START_TIME: "'2026-04-02 02:00'", STOP_TIME: "'2026-04-10 23:50'",
-        STEP_SIZE: "'6 h'", VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",
+        STEP_SIZE: "'1 h'", VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",
         REF_PLANE: "'ECLIPTIC'", REF_SYSTEM: "'J2000'", CSV_FORMAT: "'YES'",
       });
       const moonResp = await fetch(`${base}?${moonParams}`);
@@ -463,15 +463,24 @@ class TrajectoryRenderer {
     // Earth
     const earth = toScreen(0, 0);
 
-    // Moon position at current time
+    // Moon position at current time (interpolated between data points)
     let moonProj = toScreen(maxX * 0.9, 0); // fallback
     if (moonRotated.length > 1) {
       const now = Date.now();
-      let mp = moonRotated[0];
-      for (const m of moonRotated) {
-        if (m.timestamp <= now) mp = m;
+      let before = moonRotated[0];
+      let after = moonRotated[moonRotated.length - 1];
+      for (let i = 0; i < moonRotated.length - 1; i++) {
+        if (moonRotated[i].timestamp <= now && moonRotated[i + 1].timestamp >= now) {
+          before = moonRotated[i];
+          after = moonRotated[i + 1];
+          break;
+        }
       }
-      moonProj = toScreen(mp.rx, mp.ry);
+      const span = after.timestamp - before.timestamp;
+      const t = span > 0 ? Math.max(0, Math.min(1, (now - before.timestamp) / span)) : 0;
+      const rx = before.rx + (after.rx - before.rx) * t;
+      const ry = before.ry + (after.ry - before.ry) * t;
+      moonProj = toScreen(rx, ry);
     }
 
     // Sizes: Earth radius 6,371 km, Moon 1,737 km
