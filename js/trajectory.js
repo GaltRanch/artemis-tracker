@@ -574,10 +574,12 @@ class TrajectoryRenderer {
     let topPt = pts[0];
     for (const p of pts) { if (p.y < topPt.y) topPt = p; }
     ctx.setLineDash([]);
-    this._text(ctx, topPt.x, topPt.y - 8 / this._zoom, 'ORBITA LUNAR', {
-      color: 'rgba(148, 163, 184, 0.3)',
-      font: '600 9px "Orbitron", monospace',
-    });
+    if (this._zoom < 4) {
+      this._text(ctx, topPt.x, topPt.y - 8 / this._zoom, 'ORBITA LUNAR', {
+        color: 'rgba(148, 163, 184, 0.3)',
+        font: '600 9px "Orbitron", monospace',
+      });
+    }
 
     // Flyby point marker — where the Moon will be during closest approach
     if (scene.flybyMoonPos) {
@@ -643,14 +645,16 @@ class TrajectoryRenderer {
     ctx.closePath();
     ctx.fill();
 
-    // "intercepta aqui" label
-    const mx = (orion.x + flyby.x) / 2;
-    const my = (orion.y + flyby.y) / 2;
+    // "intercepta aqui" label — only at low zoom
     ctx.restore();
-    this._text(ctx, mx, my - 6 / this._zoom, 'RUTA INTERCEPTACION', {
-      color: 'rgba(249, 115, 22, 0.5)',
-      font: '600 8px "Orbitron", monospace',
-    });
+    if (this._zoom < 3) {
+      const mx = (orion.x + flyby.x) / 2;
+      const my = (orion.y + flyby.y) / 2;
+      this._text(ctx, mx, my - 6 / this._zoom, 'RUTA INTERCEPTACION', {
+        color: 'rgba(249, 115, 22, 0.5)',
+        font: '600 8px "Orbitron", monospace',
+      });
+    }
   }
 
   // Arrow showing Moon's direction of motion on its orbit
@@ -777,17 +781,18 @@ class TrajectoryRenderer {
       pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
       ctx.stroke();
 
-      // Label "PREDICCION (NoBurn)" near the midpoint of the prediction
-      if (pts.length > 10) {
+      // Label "PREDICCION (NoBurn)" — hidden at high zoom to reduce clutter
+      if (pts.length > 10 && this._zoom < 3) {
         const mid = pts[Math.floor(pts.length * 0.4)];
         ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(148,163,184,0.2)';
-        ctx.font = '600 8px "Orbitron", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('PREDICCION', mid.x, mid.y - 8);
-        ctx.fillStyle = 'rgba(148,163,184,0.12)';
-        ctx.font = '500 7px "Inter", sans-serif';
-        ctx.fillText('(NoBurn — sujeta a correcciones)', mid.x, mid.y + 2);
+        this._text(ctx, mid.x, mid.y - 10 / this._zoom, 'PREDICCION', {
+          color: 'rgba(148,163,184,0.3)',
+          font: '600 9px "Orbitron", monospace',
+        });
+        this._text(ctx, mid.x, mid.y + 2 / this._zoom, '(NoBurn — sujeta a correcciones)', {
+          color: 'rgba(148,163,184,0.2)',
+          font: '500 8px "Inter", sans-serif',
+        });
       }
     }
     ctx.restore();
