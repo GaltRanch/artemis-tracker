@@ -147,7 +147,7 @@ class TrajectoryRenderer {
       const params = new URLSearchParams({
         format: 'json',
         COMMAND: `'${config.horizonsId}'`,
-        CENTER: "'399'",
+        CENTER: "'@399'",
         EPHEM_TYPE: "'VECTORS'",
         START_TIME: "'2026-04-02 02:00'",
         STOP_TIME: "'2026-04-10 23:50'",
@@ -167,7 +167,7 @@ class TrajectoryRenderer {
       await new Promise(r => setTimeout(r, 800));
       const moonParams = new URLSearchParams({
         format: 'json',
-        COMMAND: "'301'", CENTER: "'399'",
+        COMMAND: "'301'", CENTER: "'@399'",
         EPHEM_TYPE: "'VECTORS'",
         START_TIME: "'2026-04-02 02:00'", STOP_TIME: "'2026-04-10 23:50'",
         STEP_SIZE: "'6 h'", VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",
@@ -181,7 +181,7 @@ class TrajectoryRenderer {
       await new Promise(r => setTimeout(r, 800));
       const moonOrbitParams = new URLSearchParams({
         format: 'json',
-        COMMAND: "'301'", CENTER: "'399'",
+        COMMAND: "'301'", CENTER: "'@399'",
         EPHEM_TYPE: "'VECTORS'",
         START_TIME: "'2026-03-20 00:00'", STOP_TIME: "'2026-04-16 08:00'",
         STEP_SIZE: "'8 h'", VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",

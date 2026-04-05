@@ -99,9 +99,9 @@ class TelemetryEngine {
 
     try {
       // Sequential to avoid JPL rate-limiting (503)
-      const earthVec = await this._fetchWithRetry(() => this._fetchVectors('399', start, end));
+      const earthVec = await this._fetchWithRetry(() => this._fetchVectors('@399', start, end));
       await this._sleep(800);
-      const moonVec = await this._fetchWithRetry(() => this._fetchVectors('301', start, end));
+      const moonVec = await this._fetchWithRetry(() => this._fetchVectors('@301', start, end));
       await this._sleep(800);
       const obsData = await this._fetchWithRetry(() => this._fetchObserver(start, end));
 
@@ -199,7 +199,7 @@ class TelemetryEngine {
     const params = new URLSearchParams({
       format: 'json',
       COMMAND: `'${this.spacecraftId}'`,
-      CENTER: "'399'",
+      CENTER: "'@399'",
       EPHEM_TYPE: "'OBSERVER'",
       START_TIME: fmt(new Date()),
       STOP_TIME: fmt(new Date(Date.now() + 60000)),
