@@ -442,8 +442,8 @@ checkApiConfig();
 // ===== HLS Player for NASA TV =====
 
 const HLS_STREAMS = {
-  public: 'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8',
-  media: 'https://nasa-i.akamaihd.net/hls/live/253566/NASA-NTV2-Media/master.m3u8',
+  public: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8',
+  media: 'https://ntv2.akamaized.net/hls/live/2013923/NASA-NTV2-HLS/master.m3u8',
 };
 
 const videoEl = $('nasa-tv-player');
