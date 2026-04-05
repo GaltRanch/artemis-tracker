@@ -438,3 +438,68 @@ apiSettingsBtn?.addEventListener('click', () => {
 
 // Check on load
 checkApiConfig();
+
+// ===== HLS Player for NASA TV =====
+
+const HLS_STREAMS = {
+  public: 'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-Public/master.m3u8',
+  media: 'https://nasa-i.akamaihd.net/hls/live/253566/NASA-NTV2-Media/master.m3u8',
+};
+
+const videoEl = $('nasa-tv-player');
+const hlsStatus = $('hls-status');
+let hlsInstance = null;
+
+function loadStream(key) {
+  const url = HLS_STREAMS[key];
+  if (!url || !videoEl) return;
+
+  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+
+  if (window.Hls?.isSupported()) {
+    hlsInstance = new Hls({ liveSyncDuration: 3, liveMaxLatencyDuration: 10 });
+    hlsInstance.loadSource(url);
+    hlsInstance.attachMedia(videoEl);
+    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+      hlsStatus.textContent = 'LISTO';
+    });
+    hlsInstance.on(Hls.Events.ERROR, (ev, data) => {
+      if (data.fatal) {
+        hlsStatus.textContent = 'ERROR';
+        hlsStatus.classList.remove('live');
+      }
+    });
+  } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+    // Native HLS (Safari, iOS)
+    videoEl.src = url;
+  } else {
+    hlsStatus.textContent = 'HLS NO SOPORTADO';
+  }
+}
+
+// Stream selector
+document.querySelectorAll('.hls-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.hls-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadStream(btn.dataset.stream);
+    videoEl.play().catch(() => {});
+  });
+});
+
+// Status indicator
+videoEl?.addEventListener('playing', () => {
+  hlsStatus.textContent = 'EN VIVO';
+  hlsStatus.classList.add('live');
+});
+videoEl?.addEventListener('pause', () => {
+  hlsStatus.textContent = 'Pausado';
+  hlsStatus.classList.remove('live');
+});
+videoEl?.addEventListener('waiting', () => {
+  hlsStatus.textContent = 'Cargando...';
+  hlsStatus.classList.remove('live');
+});
+
+// Load default stream
+loadStream('public');
