@@ -325,7 +325,15 @@ class TrajectoryRenderer {
         telemetry ? telemetry.distEarth : 0, 'rgba(96,165,250,0.4)', 'rgba(37,99,235,0.12)');
       this._drawDistLabel(ctx, scene.moonX, scene.moonY, orion.x, orion.y,
         telemetry ? telemetry.distMoon : 0, 'rgba(148,163,184,0.35)', 'rgba(148,163,184,0.08)');
+
+      // Intercept arrow — Orion current position → flyby point (where Moon WILL be)
+      if (scene.flybyMoonPos && currentIdx < scene.pts.length - 10) {
+        this._drawInterceptArrow(ctx, orion, scene.flybyMoonPos);
+      }
     }
+
+    // Moon direction arrow — show where Moon is heading on its orbit
+    this._drawMoonDirection(ctx, scene);
 
     // TLI marker
     this._drawTLIMarker(ctx, scene, config);
@@ -572,6 +580,90 @@ class TrajectoryRenderer {
       ctx.fillText('6-7 Abr ~23:06 UTC', fp.x, fp.y + 16);
     }
 
+    ctx.restore();
+  }
+
+  // Arrow from Orion current position to the flyby interception point
+  _drawInterceptArrow(ctx, orion, flyby) {
+    const dx = flyby.x - orion.x;
+    const dy = flyby.y - orion.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 20) return;
+
+    ctx.save();
+    ctx.setLineDash([2, 4]);
+    ctx.strokeStyle = 'rgba(249, 115, 22, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(orion.x, orion.y);
+    ctx.lineTo(flyby.x, flyby.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrow head
+    const angle = Math.atan2(dy, dx);
+    const ahx = flyby.x - Math.cos(angle) * 12;
+    const ahy = flyby.y - Math.sin(angle) * 12;
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.4)';
+    ctx.beginPath();
+    ctx.moveTo(ahx + Math.cos(angle - 2.5) * 6, ahy + Math.sin(angle - 2.5) * 6);
+    ctx.lineTo(ahx, ahy);
+    ctx.lineTo(ahx + Math.cos(angle + 2.5) * 6, ahy + Math.sin(angle + 2.5) * 6);
+    ctx.closePath();
+    ctx.fill();
+
+    // "intercepta aqui" label
+    const mx = (orion.x + flyby.x) / 2;
+    const my = (orion.y + flyby.y) / 2;
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.4)';
+    ctx.font = '600 7px "Orbitron", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('RUTA INTERCEPTACION', mx, my - 6);
+    ctx.restore();
+  }
+
+  // Arrow showing Moon's direction of motion on its orbit
+  _drawMoonDirection(ctx, scene) {
+    if (!scene.moonOrbitPts || scene.moonOrbitPts.length < 2) return;
+    // Find orbit point closest to current Moon position
+    const mx = scene.moonX, my = scene.moonY;
+    let minDist = Infinity, idx = 0;
+    for (let i = 0; i < scene.moonOrbitPts.length; i++) {
+      const p = scene.moonOrbitPts[i];
+      const d = Math.hypot(p.x - mx, p.y - my);
+      if (d < minDist) { minDist = d; idx = i; }
+    }
+
+    // Get next orbit point for direction vector
+    const next = scene.moonOrbitPts[(idx + 1) % scene.moonOrbitPts.length];
+    const dx = next.x - mx;
+    const dy = next.y - my;
+    const len = Math.hypot(dx, dy);
+    if (len < 2) return;
+
+    const nx = dx / len, ny = dy / len;
+    const arrowLen = 22;
+
+    ctx.save();
+    // Arrow line
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(mx + nx * (scene.moonR + 4), my + ny * (scene.moonR + 4));
+    ctx.lineTo(mx + nx * (scene.moonR + arrowLen), my + ny * (scene.moonR + arrowLen));
+    ctx.stroke();
+
+    // Arrow head
+    const tipX = mx + nx * (scene.moonR + arrowLen);
+    const tipY = my + ny * (scene.moonR + arrowLen);
+    const angle = Math.atan2(ny, nx);
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - Math.cos(angle - 0.4) * 5, tipY - Math.sin(angle - 0.4) * 5);
+    ctx.lineTo(tipX - Math.cos(angle + 0.4) * 5, tipY - Math.sin(angle + 0.4) * 5);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
   }
 
