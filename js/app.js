@@ -103,6 +103,7 @@ const dsnMap = new DSNMap('dsn-map-canvas');
 const radGauge = new RadiationGauge('radiation-gauge');
 // earthView removed — not real data
 const neoRadar = new NEORadar('neo-radar-canvas');
+const commMeter = new CommSignalMeter('comm-signal');
 const swTimeline = new SpaceWeatherTimeline('sw-timeline');
 renderCrewFirsts('crew-firsts');
 
@@ -259,6 +260,9 @@ function update() {
   if (trajectory3d) trajectory3d.update(t.met.progress, MISSION);
   else if (trajectory2d) trajectory2d.draw(t.met.progress, MISSION, t);
 
+  // Comm meter updates every second for live history
+  commMeter.draw(dataSources.dsn);
+
   updateTimeline(t.met.elapsedSeconds);
 }
 
@@ -346,6 +350,7 @@ function updateExtras() {
   radGauge.draw(dataSources.spaceWeather, t.distEarth);
   swTimeline.draw(dataSources.spaceWeather, MISSION.launchDate);
   neoRadar.draw(dataSources.neo);
+  commMeter.draw(dataSources.dsn);
 
 }
 

@@ -663,7 +663,176 @@ class SpaceWeatherTimeline {
   }
 }
 
+// ===== 7. COMMUNICATION SIGNAL METER =====
+
+class CommSignalMeter {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    this.dpr = window.devicePixelRatio || 1;
+    this._history = []; // last 60 data points (1 per second)
+    this._frame = 0;
+    this._resize();
+    window.addEventListener('resize', () => this._resize());
+  }
+
+  _resize() {
+    if (!this.canvas) return;
+    const r = this.canvas.getBoundingClientRect();
+    this.canvas.width = r.width * this.dpr;
+    this.canvas.height = r.height * this.dpr;
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.w = r.width;
+    this.h = r.height;
+  }
+
+  recordSample(dsnData) {
+    if (!dsnData || !dsnData.activeSignals) {
+      this._history.push({ t: Date.now(), dishes: 0, dataRate: 0, power: 0, bands: [] });
+    } else {
+      this._history.push({
+        t: Date.now(),
+        dishes: dsnData.dishCount || 0,
+        dataRate: dsnData.maxDataRate || 0,
+        power: dsnData.activeSignals.length > 0
+          ? Math.max(...dsnData.activeSignals.map(s => s.power).filter(p => p < 0).map(p => p)) || -120
+          : -120,
+        bands: dsnData.bands || [],
+      });
+    }
+    if (this._history.length > 60) this._history.shift();
+  }
+
+  draw(dsnData) {
+    if (!this.canvas) return;
+    const ctx = this.ctx;
+    const w = this.w, h = this.h;
+    this._frame++;
+    ctx.clearRect(0, 0, w, h);
+
+    this.recordSample(dsnData);
+
+    // === Signal bars (top-left) ===
+    const barsX = 12, barsY = 16;
+    const dishCount = dsnData?.dishCount || 0;
+    const quality = Math.min(4, dishCount); // 0-4 bars
+    const barWidths = [4, 4, 4, 4];
+    const barHeights = [8, 14, 20, 26];
+
+    for (let i = 0; i < 4; i++) {
+      const active = i < quality;
+      const isPulsing = active && i === quality - 1;
+      ctx.fillStyle = active
+        ? (isPulsing ? `rgba(16,185,129,${0.6 + 0.4 * Math.sin(this._frame * 0.1)})` : '#10b981')
+        : '#1a2744';
+      ctx.fillRect(barsX + i * 7, barsY + 26 - barHeights[i], barWidths[i], barHeights[i]);
+    }
+
+    ctx.fillStyle = '#10b981';
+    ctx.font = '700 8px "Orbitron", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(dishCount > 0 ? 'ENLACE' : 'SIN SEÑAL', barsX, 58);
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '500 7px "Inter", sans-serif';
+    ctx.fillText(`${dishCount} antena${dishCount !== 1 ? 's' : ''}`, barsX, 68);
+
+    // === Stats (top-right) ===
+    const rightX = w - 12;
+    const maxRate = dsnData?.maxDataRate || 0;
+    const rateStr = maxRate >= 1e6 ? `${(maxRate/1e6).toFixed(1)} Mbps`
+      : maxRate >= 1e3 ? `${(maxRate/1e3).toFixed(0)} kbps`
+      : maxRate > 0 ? `${maxRate} bps` : '--';
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#06d6d6';
+    ctx.font = '700 14px "Orbitron", monospace';
+    ctx.fillText(rateStr, rightX, 20);
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '500 7px "Inter", sans-serif';
+    ctx.fillText('DATA RATE', rightX, 30);
+
+    // RTLT
+    const rtlt = dsnData?.rtlt || 0;
+    ctx.fillStyle = '#f97316';
+    ctx.font = '700 11px "Orbitron", monospace';
+    ctx.fillText(`${rtlt.toFixed(2)}s`, rightX, 48);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '500 7px "Inter", sans-serif';
+    ctx.fillText('LATENCIA (RTLT)', rightX, 58);
+
+    // Bands
+    const bands = (dsnData?.bands || []).join(' · ') || '--';
+    ctx.fillText(`Bandas: ${bands}`, rightX, 70);
+
+    // === History graph (bottom half) ===
+    const gY = 85, gH = h - gY - 20, gX = 12, gW = w - 24;
+
+    // Axis
+    ctx.strokeStyle = '#1a2744';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(gX, gY + gH); ctx.lineTo(gX + gW, gY + gH);
+    ctx.stroke();
+
+    if (this._history.length > 1) {
+      // Find max data rate for scaling
+      const maxHistRate = Math.max(1, ...this._history.map(p => p.dataRate));
+
+      // Area graph
+      ctx.beginPath();
+      ctx.moveTo(gX, gY + gH);
+      this._history.forEach((p, i) => {
+        const x = gX + (i / (this._history.length - 1)) * gW;
+        const y = gY + gH - (p.dataRate / maxHistRate) * gH;
+        ctx.lineTo(x, y);
+      });
+      ctx.lineTo(gX + gW, gY + gH);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, gY, 0, gY + gH);
+      grad.addColorStop(0, 'rgba(6, 214, 214, 0.3)');
+      grad.addColorStop(1, 'rgba(6, 214, 214, 0.02)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Line
+      ctx.beginPath();
+      this._history.forEach((p, i) => {
+        const x = gX + (i / (this._history.length - 1)) * gW;
+        const y = gY + gH - (p.dataRate / maxHistRate) * gH;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = '#06d6d6';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Current value dot
+      const last = this._history[this._history.length - 1];
+      const lastX = gX + gW;
+      const lastY = gY + gH - (last.dataRate / maxHistRate) * gH;
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#06d6d6';
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#4a5568';
+      ctx.font = '500 8px "Inter", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Recopilando historial...', w / 2, gY + gH / 2);
+    }
+
+    // Graph label
+    ctx.fillStyle = '#64748b';
+    ctx.font = '500 7px "Inter", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('HISTORIAL DATA RATE (últimos ~60s)', gX, gY - 4);
+  }
+}
+
 // Export
+window.CommSignalMeter = CommSignalMeter;
 window.DSNMap = DSNMap;
 window.RadiationGauge = RadiationGauge;
 window.renderCrewFirsts = renderCrewFirsts;
