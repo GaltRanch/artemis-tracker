@@ -8,7 +8,7 @@ class TelemetryEngine {
     this.config = config;
     this.launchDate = new Date(config.launchDate);
     this.durationMs = config.durationDays * 24 * 60 * 60 * 1000;
-    this.apiBase = '/api/horizons';
+    this.apiBase = 'api/horizons';
     this.spacecraftId = config.horizonsId || '-1024';
 
     // Data caches

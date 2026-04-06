@@ -139,7 +139,7 @@ class TrajectoryRenderer {
     if (this._trajectoryLoading || this._trajectoryLoaded) return;
     this._trajectoryLoading = true;
 
-    const base = '/api/horizons';
+    const base = 'api/horizons';
     const fmt = (d) => `'${d}'`;
 
     try {

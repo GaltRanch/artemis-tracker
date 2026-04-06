@@ -99,6 +99,11 @@
       <section class="card trajectory-card">
         <div class="card-title"><span class="accent"></span><span data-i18n="card_trajectory_3d">3D TRAJECTORY — NASA/JPL HORIZONS DATA</span></div>
         <div id="trajectory-3d"></div>
+        <div class="traj3d-controls">
+          <button id="btn-focus-orion" title="Focus on Orion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg> ORION</button>
+          <button id="btn-focus-pov" title="Crew view from Orion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> CREW VIEW</button>
+          <button id="btn-focus-all" title="Full view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg> FULL</button>
+        </div>
         <div class="trajectory-legend">
           <span><i class="dot earth"></i> <span data-i18n="legend_earth">Earth</span></span>
           <span><i class="dot moon"></i> <span data-i18n="legend_moon">Moon</span></span>

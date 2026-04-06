@@ -52,17 +52,17 @@ class Trajectory3D {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.minDistance = 20;
+    this.controls.minDistance = 5;
     this.controls.maxDistance = 2000;
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 0.3;
     this.controls.target.set(0, 0, 0);
 
-    // Lighting
-    const sun = new THREE.DirectionalLight(0xffffff, 2.5);
-    sun.position.set(-500, 100, 300);
-    this.scene.add(sun);
-    this.scene.add(new THREE.AmbientLight(0x1a1a3a, 0.6));
+    // Lighting — placeholder, will be repositioned with real Sun data
+    this._sunLight = new THREE.DirectionalLight(0xfff5e0, 3.0);
+    this._sunLight.position.set(-500, 100, 300);
+    this.scene.add(this._sunLight);
+    this.scene.add(new THREE.AmbientLight(0x0a0a1a, 0.3));
 
     // Starfield background
     this._createStarfield();
@@ -106,45 +106,96 @@ class Trajectory3D {
     this.scene.add(new THREE.Points(geo, mat));
   }
 
+  _fixTex(tex) {
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
   _createEarth() {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const segs = isMobile ? 32 : 64;
+    const geo = new THREE.SphereGeometry(6.371, segs, segs);
     const loader = new THREE.TextureLoader();
-    const geo = new THREE.SphereGeometry(6.371, 64, 64); // radius = 6.371 (1 unit = 1000 km)
+    const suffix = isMobile ? '_1k.jpg' : '.jpg';
+    const TEX = 'assets/textures/';
 
-    loader.load('https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg', (tex) => {
-      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, metalness: 0.1 });
-      this._earth = new THREE.Mesh(geo, mat);
-      this._earth.position.set(0, 0, 0);
-      this.scene.add(this._earth);
+    // Create Earth immediately with fallback color, update when texture loads
+    const mat = new THREE.MeshPhongMaterial({ color: 0x2563eb, specular: new THREE.Color(0x222244), shininess: 15 });
+    this._earth = new THREE.Mesh(geo, mat);
+    this.scene.add(this._earth);
 
-      // Atmosphere glow
-      const atmosGeo = new THREE.SphereGeometry(6.8, 32, 32);
-      const atmosMat = new THREE.MeshBasicMaterial({
-        color: 0x4488ff, transparent: true, opacity: 0.08, side: THREE.BackSide,
-      });
-      const atmos = new THREE.Mesh(atmosGeo, atmosMat);
-      this._earth.add(atmos);
-    }, undefined, () => {
-      // Fallback
-      const mat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 });
-      this._earth = new THREE.Mesh(geo, mat);
-      this.scene.add(this._earth);
+    // Atmosphere glow (no texture needed)
+    const atmosMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        varying vec3 vNormal;
+        void main() {
+          float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+          gl_FragColor = vec4(0.3, 0.6, 1.0, intensity * 0.4);
+        }`,
+      transparent: true, side: THREE.BackSide, depthWrite: false,
     });
+    this._earth.add(new THREE.Mesh(new THREE.SphereGeometry(7.0, 32, 32), atmosMat));
+
+    // Load day texture
+    loader.load(TEX + 'earth_daymap' + suffix, (tex) => {
+      this._fixTex(tex);
+      this._earth.material.map = tex;
+      this._earth.material.color.set(0xffffff);
+      this._earth.material.needsUpdate = true;
+      console.log('[3D] Earth day texture loaded');
+    }, undefined, (e) => console.warn('[3D] Earth day texture failed', e));
+
+    // Cloud layer
+    loader.load(TEX + 'earth_clouds' + suffix, (tex) => {
+      this._fixTex(tex);
+      const cloudMat = new THREE.MeshPhongMaterial({ map: tex, transparent: true, opacity: 0.35, depthWrite: false });
+      this._earthClouds = new THREE.Mesh(new THREE.SphereGeometry(6.42, 48, 48), cloudMat);
+      this._earth.add(this._earthClouds);
+      console.log('[3D] Earth clouds loaded');
+    }, undefined, () => {});
+
+    // Night lights
+    loader.load(TEX + 'earth_nightmap' + suffix, (tex) => {
+      this._fixTex(tex);
+      const nightMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+      this._earthNight = new THREE.Mesh(new THREE.SphereGeometry(6.375, 64, 64), nightMat);
+      this._earth.add(this._earthNight);
+      console.log('[3D] Earth night texture loaded');
+    }, undefined, () => {});
   }
 
   _createMoon() {
-    const loader = new THREE.TextureLoader();
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const geo = new THREE.SphereGeometry(1.737, 32, 32);
+    const loader = new THREE.TextureLoader();
+    const suffix = isMobile ? '_1k.jpg' : '.jpg';
 
-    loader.load('https://www.solarsystemscope.com/textures/download/2k_moon.jpg', (tex) => {
-      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, metalness: 0 });
-      this._moon = new THREE.Mesh(geo, mat);
-      this._moon = new THREE.Mesh(geo, mat);
-      this.scene.add(this._moon);
-    }, undefined, () => {
-      const mat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
-      this._moon = new THREE.Mesh(geo, mat);
-      this.scene.add(this._moon);
-    });
+    // Create Moon immediately with fallback color
+    const mat = new THREE.MeshPhongMaterial({ color: 0x94a3b8, shininess: 2, specular: new THREE.Color(0x111111) });
+    this._moon = new THREE.Mesh(geo, mat);
+    this._moon.rotation.y = Math.PI * 0.5;
+    this.scene.add(this._moon);
+
+    loader.load('assets/textures/moon' + suffix, (tex) => {
+      this._fixTex(tex);
+      this._moon.material.map = tex;
+      this._moon.material.bumpMap = tex;
+      this._moon.material.bumpScale = 0.2;
+      this._moon.material.color.set(0xffffff);
+      this._moon.material.needsUpdate = true;
+      console.log('[3D] Moon texture loaded');
+    }, undefined, (e) => console.warn('[3D] Moon texture failed', e));
   }
 
   _createLabels() {
@@ -178,7 +229,7 @@ class Trajectory3D {
     if (this._loading || this._loaded) return;
     this._loading = true;
 
-    const base = '/api/horizons';
+    const base = 'api/horizons';
     try {
       // Spacecraft trajectory (Earth-centered)
       const params = new URLSearchParams({
@@ -218,9 +269,23 @@ class Trajectory3D {
       const moonOrbitJson = await moonOrbitResp.json();
       this._moonOrbit = this._parseVectors(moonOrbitJson.result);
 
+      // Sun position (geocentric, for correct lighting)
+      await new Promise(r => setTimeout(r, 800));
+      const sunParams = new URLSearchParams({
+        format: 'json', COMMAND: "'10'", CENTER: "'@399'",
+        EPHEM_TYPE: "'VECTORS'", START_TIME: "'2026-04-06 12:00'",
+        STOP_TIME: "'2026-04-06 13:00'", STEP_SIZE: "'1 h'",
+        VEC_TABLE: "'2'", OUT_UNITS: "'KM-S'",
+        REF_PLANE: "'ECLIPTIC'", REF_SYSTEM: "'J2000'", CSV_FORMAT: "'YES'",
+      });
+      const sunResp = await fetch(`${base}?${sunParams}`);
+      const sunJson = await sunResp.json();
+      this._sunPosition = this._parseVectors(sunJson.result);
+
       if (this._realTrajectory?.length > 0) {
         this._loaded = true;
         this._buildTrajectoryMesh();
+        this._positionSun();
         if (this._loadingMesh) {
           this.scene.remove(this._loadingMesh);
           this._loadingMesh = null;
@@ -240,7 +305,7 @@ class Trajectory3D {
     const lines = text.substring(soe + 5, eoe).trim().split('\n').filter(l => l.trim());
     return lines.map(line => {
       const c = line.split(',').map(s => s.trim());
-      if (c.length < 11) return null;
+      if (c.length < 5) return null;
       const ts = this._parseDate(c[1]);
       if (!ts) return null;
       // Convert km to scene units (1 unit = 1000 km)
@@ -249,7 +314,7 @@ class Trajectory3D {
         x: parseFloat(c[2]) / 1000,
         y: parseFloat(c[3]) / 1000,
         z: parseFloat(c[4]) / 1000,
-        range: parseFloat(c[9]),
+        range: c.length >= 10 ? parseFloat(c[9]) : 0,
       };
     }).filter(Boolean);
   }
@@ -283,14 +348,53 @@ class Trajectory3D {
     }));
     this.scene.add(this._traveledLine);
 
-    // Orion marker (glowing sphere)
-    const orionGeo = new THREE.SphereGeometry(2, 16, 16);
-    const orionMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-    this._orion = new THREE.Mesh(orionGeo, orionMat);
+    // Orion MPCV capsule model — scaled down (real ~5m, Moon ~1737km)
+    // Using scale 0.15 so it's visible but much smaller than the Moon
+    this._orion = new THREE.Group();
+    const S = 0.15; // capsule scale factor
+
+    // Command Module — truncated cone (wider heat shield at bottom)
+    const cmGeo = new THREE.CylinderGeometry(0.8 * S, 2.0 * S, 2.5 * S, 20);
+    const cmMat = new THREE.MeshPhongMaterial({ color: 0xcccccc, shininess: 30, specular: 0x444444 });
+    const cm = new THREE.Mesh(cmGeo, cmMat);
+    cm.position.y = 2.2 * S;
+    this._orion.add(cm);
+
+    // Heat shield (dark disk at bottom of CM)
+    const shieldGeo = new THREE.CylinderGeometry(2.0 * S, 2.0 * S, 0.3 * S, 20);
+    const shieldMat = new THREE.MeshPhongMaterial({ color: 0x3a2a1a, shininess: 10 });
+    const shield = new THREE.Mesh(shieldGeo, shieldMat);
+    shield.position.y = 0.85 * S;
+    this._orion.add(shield);
+
+    // ESM — European Service Module (cylinder)
+    const esmGeo = new THREE.CylinderGeometry(1.9 * S, 1.9 * S, 3.5 * S, 20);
+    const esmMat = new THREE.MeshPhongMaterial({ color: 0xb8a060, shininess: 50, specular: 0x665533 });
+    const esm = new THREE.Mesh(esmGeo, esmMat);
+    esm.position.y = -1.1 * S;
+    this._orion.add(esm);
+
+    // Engine nozzle
+    const nozzleGeo = new THREE.CylinderGeometry(0.5 * S, 0.8 * S, 1.0 * S, 12);
+    const nozzleMat = new THREE.MeshPhongMaterial({ color: 0x555555, shininess: 60 });
+    const nozzle = new THREE.Mesh(nozzleGeo, nozzleMat);
+    nozzle.position.y = -3.3 * S;
+    this._orion.add(nozzle);
+
+    // 4 Solar panels in X configuration (Orion's distinctive feature)
+    const panelGeo = new THREE.BoxGeometry(7 * S, 0.08 * S, 1.0 * S);
+    const panelMat = new THREE.MeshPhongMaterial({ color: 0x162d50, shininess: 90, specular: 0x3366aa });
+    for (let i = 0; i < 4; i++) {
+      const panel = new THREE.Mesh(panelGeo, panelMat);
+      panel.position.y = -1.1 * S;
+      panel.rotation.y = (i * Math.PI) / 4;
+      this._orion.add(panel);
+    }
+
     this.scene.add(this._orion);
 
-    // Orion glow
-    const glowGeo = new THREE.SphereGeometry(5, 16, 16);
+    // Orion glow (smaller)
+    const glowGeo = new THREE.SphereGeometry(1.5, 16, 16);
     const glowMat = new THREE.MeshBasicMaterial({
       color: 0xf97316, transparent: true, opacity: 0.15,
     });
@@ -299,7 +403,7 @@ class Trajectory3D {
 
     // Orion label
     const orionLabel = this._createTextSprite('ORION', 0xf97316);
-    orionLabel.position.set(0, 8, 0);
+    orionLabel.position.set(0, 3, 0);
     this._orion.add(orionLabel);
 
     // TLI marker
@@ -412,6 +516,64 @@ class Trajectory3D {
     this._centerCamera(plannedPts);
   }
 
+  _positionSun() {
+    if (!this._sunPosition?.length) return;
+    const s = this._sunPosition[0];
+    // Sun is ~150M km away; normalize direction and place light + visual at scene edge
+    const dir = new THREE.Vector3(s.x, s.z, -s.y).normalize();
+
+    // Remove the DirectionalLight (limited frustum), use a single light
+    // that illuminates everything from the Sun's direction
+    this.scene.remove(this._sunLight);
+
+    // PointLight very far away simulates sunlight on all objects regardless of position
+    this._sunLight = new THREE.PointLight(0xfff5e0, 8.0, 0, 0); // no decay
+    this._sunLight.position.copy(dir.clone().multiplyScalar(1200));
+    this.scene.add(this._sunLight);
+
+    // Visible Sun (billboard sprite at edge of scene)
+    const sunPos = dir.clone().multiplyScalar(800);
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(255,250,220,1)');
+    grad.addColorStop(0.15, 'rgba(255,220,100,0.9)');
+    grad.addColorStop(0.4, 'rgba(255,180,50,0.3)');
+    grad.addColorStop(1, 'rgba(255,150,30,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+    const sunTex = new THREE.CanvasTexture(canvas);
+    const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: sunTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    sunSprite.position.copy(sunPos);
+    sunSprite.scale.set(200, 200, 1);
+    this.scene.add(sunSprite);
+
+    // Sun label
+    const label = this._createTextSprite('SOL', 0xffcc44);
+    label.position.copy(sunPos);
+    label.position.y += 110;
+    this.scene.add(label);
+
+    // Sun-Earth direction line (very subtle)
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      dir.clone().multiplyScalar(100),
+    ]);
+    const lineMat = new THREE.LineDashedMaterial({
+      color: 0xffcc44, transparent: true, opacity: 0.1,
+      dashSize: 4, gapSize: 4,
+    });
+    const sunLine = new THREE.Line(lineGeo, lineMat);
+    sunLine.computeLineDistances();
+    this.scene.add(sunLine);
+
+    console.log(`[3D] Sun positioned at direction (${dir.x.toFixed(2)}, ${dir.y.toFixed(2)}, ${dir.z.toFixed(2)})`);
+  }
+
   _centerCamera(pts) {
     // Compute bounding box of trajectory
     const box = new THREE.Box3();
@@ -458,10 +620,20 @@ class Trajectory3D {
     }
     this._currentIdx = idx;
 
-    // Update Orion position
+    // Update Orion position and orientation
     if (this._orion && idx < traj.length) {
       const p = traj[idx];
       this._orion.position.set(p.x, p.z, -p.y);
+
+      // Orient capsule along trajectory direction
+      if (idx < traj.length - 1) {
+        const next = traj[idx + 1];
+        const dir = new THREE.Vector3(next.x - p.x, next.z - p.z, -(next.y - p.y)).normalize();
+        const up = new THREE.Vector3(0, 1, 0);
+        const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
+        this._orion.quaternion.copy(quat);
+      }
+
       if (this._orionGlow) {
         this._orionGlow.position.copy(this._orion.position);
         const t = this.clock.getElapsedTime();
@@ -522,13 +694,80 @@ class Trajectory3D {
     // Rotate Earth slowly
     if (this._earth) {
       this._earth.rotation.y += 0.001;
+      if (this._earthClouds) this._earthClouds.rotation.y += 0.0003;
     }
+
+    // Crew view from Orion
+    this._updateOrionPOV();
   }
 
   _animate() {
     requestAnimationFrame(() => this._animate());
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // ===== Camera focus modes =====
+
+  focusOrion() {
+    if (!this._orion || !this._loaded) return;
+    this._orionPOV = false;
+    const pos = this._orion.position.clone();
+    this.controls.autoRotate = false;
+
+    // Animate to Orion: target = Orion, camera offset for close-up
+    const targetDist = 40;
+    this.controls.target.copy(pos);
+    this.camera.position.set(
+      pos.x + targetDist * 0.3,
+      pos.y + targetDist * 0.7,
+      pos.z + targetDist * 0.5
+    );
+    this.camera.lookAt(pos);
+    this.controls.update();
+  }
+
+  focusOrionPOV() {
+    if (!this._orion || !this._loaded) return;
+    this._orionPOV = true;
+    this.controls.autoRotate = false;
+    // Camera will be updated each frame in update()
+  }
+
+  _updateOrionPOV() {
+    if (!this._orionPOV || !this._orion || !this._moon) return;
+    const traj = this._realTrajectory;
+    const idx = this._currentIdx;
+    if (!traj || idx >= traj.length) return;
+
+    const p = traj[idx];
+    const pos = new THREE.Vector3(p.x, p.z, -p.y);
+    const moonPos = this._moon.position.clone();
+
+    // Camera at Orion, looking toward the Moon (crew window view)
+    const toMoon = moonPos.clone().sub(pos).normalize();
+    const camPos = pos.clone().add(toMoon.clone().multiplyScalar(0.5));
+
+    this.camera.position.copy(camPos);
+    this.camera.lookAt(moonPos);
+    this.controls.target.copy(moonPos);
+    this.controls.update();
+  }
+
+  focusAll() {
+    if (!this._loaded || !this._realTrajectory) return;
+    this._orionPOV = false;
+    this.controls.autoRotate = true;
+
+    // Rebuild the full bounding box like _buildTrajectoryMesh does
+    const pts = this._realTrajectory.map(p => new THREE.Vector3(p.x, p.z, -p.y));
+    if (this._moon) pts.push(this._moon.position.clone());
+    if (this._moonOrbit) {
+      for (const p of this._moonOrbit) {
+        pts.push(new THREE.Vector3(p.x, p.z, -p.y));
+      }
+    }
+    this._centerCamera(pts);
   }
 
   _onResize() {

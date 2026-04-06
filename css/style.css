@@ -249,6 +249,41 @@ main {
   cursor: crosshair;
 }
 
+.traj3d-controls {
+  display: flex; gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.traj3d-controls button {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  font-family: 'Orbitron', 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.traj3d-controls button:hover {
+  color: var(--accent-orange);
+  border-color: var(--accent-orange);
+  background: rgba(249,115,22,0.08);
+}
+
+.traj3d-controls button.active {
+  color: var(--accent-orange);
+  border-color: var(--accent-orange);
+  background: rgba(249,115,22,0.12);
+}
+
 .trajectory-legend {
   display: flex; gap: 1.5rem;
   margin-top: 0.5rem; flex-wrap: wrap;
@@ -1340,6 +1375,16 @@ footer p + p { margin-top: 0.2rem; }
   }
 
   #trajectory-3d { height: 280px; }
+
+  .traj3d-controls { gap: 0.3rem; }
+  .traj3d-controls button {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.55rem;
+    flex: 1;
+    justify-content: center;
+    min-height: 36px;
+  }
+  .traj3d-controls button svg { width: 14px; height: 14px; }
 
   .telem-grid { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
   .telem-item { padding: 0.55rem 0.5rem; }

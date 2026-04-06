@@ -40,6 +40,9 @@ function initViz() {
       trajectory3d = new Trajectory3D('trajectory-3d');
       vizInitDone = true;
       console.log('[Viz] 3D initialized (WebGL)');
+
+      // Focus buttons — bind after init
+      setupCameraButtons();
     } catch (err) {
       console.warn('[Viz] 3D failed, falling back to 2D:', err.message);
       initFallback2D(container);
@@ -81,6 +84,35 @@ setTimeout(initViz, 500);
 setTimeout(initViz, 2000);
 
 const $ = (id) => document.getElementById(id);
+let _cameraButtonsBound = false;
+function setupCameraButtons() {
+  if (_cameraButtonsBound) return;
+  const btnOrion = document.getElementById('btn-focus-orion');
+  const btnPov = document.getElementById('btn-focus-pov');
+  const btnAll = document.getElementById('btn-focus-all');
+  if (!btnOrion) return;
+  _cameraButtonsBound = true;
+
+  const allBtns = [btnOrion, btnPov, btnAll].filter(Boolean);
+  const setActive = (btn) => { allBtns.forEach(b => b.classList.remove('active')); btn?.classList.add('active'); };
+
+  const handler = (btn, method) => {
+    ['click', 'touchend'].forEach(evt => {
+      btn.addEventListener(evt, (e) => {
+        e.preventDefault();
+        if (trajectory3d && trajectory3d[method]) {
+          trajectory3d[method]();
+          setActive(btn);
+        }
+      }, { passive: false });
+    });
+  };
+
+  handler(btnOrion, 'focusOrion');
+  if (btnPov) handler(btnPov, 'focusOrionPOV');
+  handler(btnAll, 'focusAll');
+}
+
 const dom = {
   met: $('met-clock'), phase: $('mission-phase'), date: $('current-date'),
   distEarth: $('dist-earth'), distMoon: $('dist-moon'),
@@ -503,7 +535,7 @@ const apiSettingsBtn = $('api-settings-btn');
 // Check if API key is configured on server
 async function checkApiConfig() {
   try {
-    const resp = await fetch('/api/config');
+    const resp = await fetch('api/config');
     const data = await resp.json();
     if (data.configured) {
       apiSettingsBtn.classList.add('configured');
@@ -531,7 +563,7 @@ apiSaveBtn?.addEventListener('click', async () => {
   apiSaveBtn.disabled = true;
 
   try {
-    const resp = await fetch('/api/config', {
+    const resp = await fetch('api/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey: key }),

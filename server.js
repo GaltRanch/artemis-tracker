@@ -302,12 +302,18 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ===== Static files =====
-  const filePath = path.join(STATIC_DIR, url === '/' ? 'index.html' : url);
+  const pathname = url.split('?')[0]; // strip query params
+  const filePath = path.join(STATIC_DIR, pathname === '/' ? 'index.html' : pathname);
   const ext = path.extname(filePath);
 
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not Found'); return; }
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    const headers = {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Access-Control-Allow-Origin': '*',
+    };
+    if (ext === '.html' || ext === '.js') headers['Cache-Control'] = 'no-cache, must-revalidate';
+    res.writeHead(200, headers);
     res.end(data);
   });
 });

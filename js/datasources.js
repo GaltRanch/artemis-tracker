@@ -34,7 +34,7 @@ class NASADataSources {
 
   async fetchDSN() {
     try {
-      const resp = await fetch('/api/dsn');
+      const resp = await fetch('api/dsn');
       const text = await resp.text();
       this.dsn = this._parseDSN(text);
     } catch (err) {
@@ -137,17 +137,17 @@ class NASADataSources {
 
     try {
       // Sequential to avoid 429 rate limiting with DEMO_KEY
-      const flrResp = await fetch(`/api/donki/FLR?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
+      const flrResp = await fetch(`api/donki/FLR?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
       await new Promise(r => setTimeout(r, 1200));
-      const gstResp = await fetch(`/api/donki/GST?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
+      const gstResp = await fetch(`api/donki/GST?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
       await new Promise(r => setTimeout(r, 1200));
-      const cmeResp = await fetch(`/api/donki/CME?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
+      const cmeResp = await fetch(`api/donki/CME?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
       await new Promise(r => setTimeout(r, 1200));
-      const notifResp = await fetch(`/api/donki/notifications?startDate=${start}&endDate=${end}&type=all`).then(r => r.ok ? r.json() : []).catch(() => []);
+      const notifResp = await fetch(`api/donki/notifications?startDate=${start}&endDate=${end}&type=all`).then(r => r.ok ? r.json() : []).catch(() => []);
       await new Promise(r => setTimeout(r, 1200));
-      const rbeResp = await fetch(`/api/donki/RBE?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
+      const rbeResp = await fetch(`api/donki/RBE?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
       await new Promise(r => setTimeout(r, 1200));
-      const ipsResp = await fetch(`/api/donki/IPS?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
+      const ipsResp = await fetch(`api/donki/IPS?startDate=${start}&endDate=${end}`).then(r => r.ok ? r.json() : []).catch(() => []);
 
       // Process flares
       const flares = (Array.isArray(flrResp) ? flrResp : []).map(f => ({
@@ -226,7 +226,7 @@ class NASADataSources {
 
   async fetchImages() {
     try {
-      const resp = await fetch('/api/images?q=artemis+II&media_type=image&year_start=2026');
+      const resp = await fetch('api/images?q=artemis+II&media_type=image&year_start=2026');
       const json = await resp.json();
       const items = (json.collection?.items || []).slice(0, 20).map(item => {
         const data = item.data?.[0] || {};
@@ -254,7 +254,7 @@ class NASADataSources {
 
   async fetchEPIC() {
     try {
-      const resp = await fetch('/api/epic/api/natural');
+      const resp = await fetch('api/epic/api/natural');
       const data = await resp.json();
       if (!Array.isArray(data) || data.length === 0) return;
 
@@ -282,7 +282,7 @@ class NASADataSources {
 
   async fetchAPOD() {
     try {
-      const resp = await fetch('/api/apod');
+      const resp = await fetch('api/apod');
       const data = await resp.json();
       this.apod = {
         title: data.title,
@@ -305,7 +305,7 @@ class NASADataSources {
       // 7-day window for upcoming close approaches
       const today = new Date().toISOString().slice(0, 10);
       const end = new Date(Date.now() + 6 * 86400_000).toISOString().slice(0, 10);
-      const resp = await fetch(`/api/neo?start_date=${today}&end_date=${end}`);
+      const resp = await fetch(`api/neo?start_date=${today}&end_date=${end}`);
       const data = await resp.json();
 
       // Flatten all NEOs across days
@@ -392,7 +392,7 @@ class NASADataSources {
 
   async fetchCAD() {
     try {
-      const resp = await fetch('/api/cad?dist-max=10LD&date-min=now&date-max=%2B30&fullname=true&sort=date');
+      const resp = await fetch('api/cad?dist-max=10LD&date-min=now&date-max=%2B30&fullname=true&sort=date');
       const data = await resp.json();
       if (!data.data) return;
 
@@ -420,7 +420,7 @@ class NASADataSources {
 
   async fetchSentry() {
     try {
-      const resp = await fetch('/api/sentry');
+      const resp = await fetch('api/sentry');
       const data = await resp.json();
       if (!data.data) return;
 
